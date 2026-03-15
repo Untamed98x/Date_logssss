@@ -1,69 +1,40 @@
 export default async function handler(req, res) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const token = process.env.NOTION_TOKEN;
   const dbId = process.env.NOTION_DB_ID;
+  if (!token || !dbId) return res.status(500).json({ error: 'Missing env vars' });
 
-  if (!token || !dbId) {
-    return res.status(500).json({ error: 'Missing NOTION_TOKEN or NOTION_DB_ID env vars' });
-  }
+  const r = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Notion-Version': '2022-06-28',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ page_size: 100 })
+  });
 
-  try {
-    const response = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Notion-Version': '2022-06-28',
-      },
-      body: JSON.stringify({ page_size: 100, sorts: [{ property: 'Tanggal', direction: 'descending' }] }),
-    });
+  if (!r.ok) return res.status(r.status).json({ error: await r.text() });
 
-    if (!response.ok) {
-      const err = await response.text();
-      return res.status(response.status).json({ error: err });
-    }
+  const { results } = await r.json();
+  const spots = results.map(page => {
+    const p = page.properties;
+    const t = k => p[k]?.rich_text?.[0]?.plain_text || '';
+    return {
+      id: page.id,
+      name: p['Nama Tempat']?.title?.[0]?.plain_text || '',
+      date: p['Tanggal']?.date?.start || '',
+      gmaps: p['GMaps Link']?.url || '',
+      lat: t('Latitude'), lng: t('Longitude'),
+      story: t('Story'), kota: t('Kota'),
+      mood: p['Mood']?.select?.name || '',
+      rating: p['Rating']?.select?.name || '',
+      tags: p['Tags']?.multi_select?.map(o => o.name) || [],
+      photos: t('Foto URLs').split(',').map(s => s.trim()).filter(Boolean)
+    };
+  }).filter(s => s.lat && s.lng);
 
-    const data = await response.json();
-
-    // Parse Notion results into clean spot objects
-    const spots = data.results.map((page) => {
-      const p = page.properties;
-      const getText  = (prop) => prop?.rich_text?.[0]?.plain_text || '';
-      const getTitle = (prop) => prop?.title?.[0]?.plain_text || '';
-      const getSel   = (prop) => prop?.select?.name || '';
-      const getMulti = (prop) => prop?.multi_select?.map(o => o.name) || [];
-      const getUrl   = (prop) => prop?.url || '';
-      const getDate  = (prop) => prop?.date?.start || '';
-
-      const photoRaw = getText(p['Foto URLs']);
-      const photos = photoRaw
-        ? photoRaw.split(',').map(s => s.trim()).filter(Boolean)
-        : [];
-
-      return {
-        id:     page.id,
-        name:   getTitle(p['Nama Tempat']) || 'Unnamed Spot',
-        date:   getDate(p['Tanggal']),
-        gmaps:  getUrl(p['GMaps Link']),
-        lat:    getText(p['Latitude']),
-        lng:    getText(p['Longitude']),
-        story:  getText(p['Story']),
-        mood:   getSel(p['Mood']),
-        rating: getSel(p['Rating']),
-        photos,
-        kota:   getText(p['Kota']),
-        tags:   getMulti(p['Tags']),
-      };
-    }).filter(s => s.lat && s.lng);
-
-    return res.status(200).json({ spots });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
+  res.status(200).json({ spots });
 }

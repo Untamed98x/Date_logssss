@@ -12,6 +12,7 @@
 :root {
   --cream:#f5f0e8; --warm:#e8dcc8; --ink:#1a1410;
   --rust:#c4622d; --gold:#c9a84c; --paper:#faf7f2;
+  --red:#e02020;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;font-family:'DM Mono',monospace;background:#111;color:var(--ink)}
@@ -21,10 +22,10 @@ header{
   background:var(--ink);color:var(--cream);
   height:52px;padding:0 16px;
   display:flex;align-items:center;justify-content:space-between;
-  border-bottom:3px solid var(--rust);
+  border-bottom:3px solid var(--red);
 }
 .logo{font-family:'Playfair Display',serif;font-size:1.1rem;font-style:italic}
-.logo span{color:var(--gold)}
+.logo span{color:var(--red)}
 .hbtns{display:flex;gap:8px}
 .hbtn{
   background:transparent;border:1px solid rgba(255,255,255,.25);
@@ -33,61 +34,91 @@ header{
   cursor:pointer;text-decoration:none;transition:all .2s;
   display:inline-flex;align-items:center;white-space:nowrap;
 }
-.hbtn:hover,.hbtn.rust{background:var(--rust);border-color:var(--rust)}
+.hbtn:hover,.hbtn.red{background:var(--red);border-color:var(--red)}
 
 #map{position:fixed;top:52px;left:0;right:0;bottom:0;z-index:1}
 
-/* OSM + CSS = Dark moody map, totally free */
+/* OSM → grayscale clean */
 .leaflet-tile-pane{
-  filter: invert(1) hue-rotate(180deg) saturate(0.3) brightness(0.85) contrast(1.1);
+  filter: grayscale(1) brightness(1.1) contrast(0.95);
 }
 
-/* 3D MARKER */
-.m3d{
-  position:relative;cursor:pointer;
-  filter:drop-shadow(2px 5px 5px rgba(0,0,0,0.6));
-  transition:transform .2s,filter .2s;
+/* ── FOLIUM-STYLE MARKER ── */
+/* Circle marker with white dot inside, shadow below — exactly like Folium */
+.fmarker {
+  position: relative;
+  cursor: pointer;
 }
-.m3d:hover{transform:translateY(-3px) scale(1.1);filter:drop-shadow(2px 9px 8px rgba(0,0,0,0.7));}
-.m3d.active{transform:translateY(-5px) scale(1.15);filter:drop-shadow(2px 11px 10px rgba(0,0,0,0.75));}
-.mpin{
-  border-radius:50% 50% 50% 0;transform:rotate(-45deg);
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:inset -3px -3px 7px rgba(0,0,0,.25),inset 2px 2px 5px rgba(255,255,255,.3);
-  position:relative;overflow:hidden;
+.fmarker-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--red);
+  border: 3px solid rgba(0,0,0,0.4);
+  box-shadow:
+    0 4px 8px rgba(0,0,0,0.4),
+    0 1px 3px rgba(0,0,0,0.3),
+    inset 0 -2px 4px rgba(0,0,0,0.2),
+    inset 0 2px 4px rgba(255,255,255,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .2s, box-shadow .2s;
+  position: relative;
+  overflow: hidden;
 }
-/* Glossy shine */
-.mpin::after{
-  content:'';position:absolute;
-  top:0;left:0;right:0;bottom:50%;
-  background:linear-gradient(180deg,rgba(255,255,255,.25) 0%,rgba(255,255,255,0) 100%);
-  border-radius:50% 50% 0 0;
-  transform:rotate(45deg) translate(2px,-2px);
-  pointer-events:none;
+/* Glossy top shine */
+.fmarker-circle::before {
+  content: '';
+  position: absolute;
+  top: 3px; left: 5px;
+  width: 40%; height: 35%;
+  background: rgba(255,255,255,0.35);
+  border-radius: 50%;
+  transform: rotate(-30deg);
 }
-/* Highlight dot */
-.mpin::before{
-  content:'';position:absolute;
-  top:5px;left:5px;width:9px;height:9px;
-  border-radius:50%;background:rgba(255,255,255,.35);
+/* White center dot */
+.fmarker-dot {
+  width: 8px; height: 8px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  position: relative;
+  z-index: 1;
 }
-.memoji{transform:rotate(45deg);position:relative;z-index:1;line-height:1;}
-.mshadow{
-  position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);
-  width:16px;height:5px;background:rgba(0,0,0,.35);
-  border-radius:50%;filter:blur(3px);
+/* Shadow ellipse below */
+.fmarker-shadow {
+  position: absolute;
+  bottom: -6px; left: 50%;
+  transform: translateX(-50%);
+  width: 70%; height: 5px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 50%;
+  filter: blur(3px);
 }
-.mpulse{
-  position:absolute;top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  width:52px;height:52px;border-radius:50%;
-  border:2.5px solid;opacity:0;
-  animation:pulse 1.8s ease-out infinite;
-  pointer-events:none;
+/* Active pulse */
+.fmarker-pulse {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  border-radius: 50%;
+  border: 2px solid var(--red);
+  opacity: 0;
+  animation: fpulse 1.8s ease-out infinite;
+  pointer-events: none;
 }
-@keyframes pulse{
-  0%{transform:translate(-50%,-50%) scale(.4);opacity:1;}
-  100%{transform:translate(-50%,-50%) scale(2.2);opacity:0;}
+@keyframes fpulse {
+  0%  { width: 100%; height: 100%; opacity: .9; }
+  100%{ width: 280%; height: 280%; opacity: 0; }
+}
+.fmarker:hover .fmarker-circle {
+  transform: scale(1.15);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.5), inset 0 -2px 4px rgba(0,0,0,0.2);
+}
+.fmarker.active .fmarker-circle {
+  transform: scale(1.2);
+  background: #c01010;
+  box-shadow: 0 7px 16px rgba(0,0,0,0.55);
 }
 
 /* BOTTOM SHEET */
@@ -96,7 +127,7 @@ header{
   background:var(--paper);
   border-radius:20px 20px 0 0;
   border-top:2px solid var(--ink);
-  box-shadow:0 -6px 28px rgba(0,0,0,.35);
+  box-shadow:0 -6px 28px rgba(0,0,0,.2);
   transform:translateY(calc(100% - 78px));
   transition:transform .38s cubic-bezier(.4,0,.2,1);
   max-height:78dvh;display:flex;flex-direction:column;
@@ -109,7 +140,7 @@ header{
 .shs{font-size:.58rem;color:#aaa;letter-spacing:.08em;margin-top:2px}
 .shst{display:flex;gap:14px}
 .sv{display:flex;flex-direction:column;align-items:center;gap:1px}
-.svv{color:var(--gold);font-size:.8rem;font-weight:700}
+.svv{color:var(--red);font-size:.8rem;font-weight:700}
 .svl{color:#bbb;font-size:.5rem;letter-spacing:.1em}
 
 .frow{display:flex;gap:6px;overflow-x:auto;padding:0 16px 10px;flex-shrink:0;scrollbar-width:none}
@@ -130,19 +161,19 @@ header{
   display:flex;gap:11px;align-items:flex-start;
 }
 .card:active,.card.active{background:#ede8df}
-.card.active{border-left:3px solid var(--rust);padding-left:13px}
+.card.active{border-left:3px solid var(--red);padding-left:13px}
 .cthumb{width:52px;height:52px;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:1.5rem;border-radius:2px;}
 .cthumb img{width:52px;height:52px;object-fit:cover;display:block}
 .cbody{flex:1;min-width:0}
 .cname{font-family:'Playfair Display',serif;font-size:.88rem;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cmeta{font-size:.57rem;color:#aaa;margin-bottom:3px;display:flex;gap:6px;flex-wrap:wrap}
-.cmood{font-size:.57rem;padding:2px 7px;border-left:2px solid;display:inline-block;margin-bottom:3px;background:rgba(0,0,0,.04)}
+.cmood{font-size:.57rem;padding:2px 7px;border-left:2px solid var(--red);display:inline-block;margin-bottom:3px;background:rgba(224,32,32,.06)}
 .cstory{font-size:.63rem;line-height:1.55;color:#666;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
 /* POPUP */
 .leaflet-popup-content-wrapper{
   border-radius:0!important;border:2px solid var(--ink)!important;
-  box-shadow:5px 5px 0 rgba(0,0,0,.12)!important;padding:0!important;
+  box-shadow:5px 5px 0 rgba(0,0,0,.1)!important;padding:0!important;
   font-family:'DM Mono',monospace!important;
   width:260px;background:var(--paper)!important;
 }
@@ -159,20 +190,20 @@ header{
 .pn{font-family:'Playfair Display',serif;font-size:.96rem;font-weight:700;margin-bottom:3px}
 .pr{display:flex;justify-content:space-between;margin-bottom:7px;font-size:.58rem}
 .pd{color:#aaa}.prat{color:var(--gold);font-size:.77rem}
-.ps{font-size:.64rem;line-height:1.65;color:#444;border-left:2px solid var(--rust);padding-left:9px;font-style:italic;margin-bottom:9px}
+.ps{font-size:.64rem;line-height:1.65;color:#444;border-left:2px solid var(--red);padding-left:9px;font-style:italic;margin-bottom:9px}
 .pf{display:flex;justify-content:space-between;border-top:1px solid var(--warm);padding-top:7px;font-size:.6rem}
-.pm{color:var(--rust);text-decoration:none;border-bottom:1px solid var(--rust)}
+.pm{color:var(--red);text-decoration:none;border-bottom:1px solid var(--red)}
 
 /* OVERLAY */
 .overlay{
-  position:fixed;inset:0;background:#111;z-index:9999;
+  position:fixed;inset:0;background:#f5f0e8;z-index:9999;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
   transition:opacity .5s;
 }
 .overlay.gone{opacity:0;pointer-events:none}
-.ot{font-family:'Playfair Display',serif;font-size:1.6rem;font-style:italic;color:var(--cream)}
+.ot{font-family:'Playfair Display',serif;font-size:1.6rem;font-style:italic;color:var(--ink)}
 .dots{display:flex;gap:9px}
-.dot{width:7px;height:7px;background:var(--rust);border-radius:50%;animation:bounce .8s infinite alternate}
+.dot{width:8px;height:8px;background:var(--red);border-radius:50%;animation:bounce .8s infinite alternate}
 .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
 @keyframes bounce{from{transform:translateY(0);opacity:.3}to{transform:translateY(-11px);opacity:1}}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -186,7 +217,7 @@ header{
 <body>
 
 <div class="overlay" id="overlay">
-  <div class="ot">date <span style="color:var(--gold)">spots</span></div>
+  <div class="ot">date <span style="color:var(--red)">spots</span></div>
   <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
 </div>
 
@@ -194,7 +225,7 @@ header{
   <div class="logo">date <span>spots</span></div>
   <div class="hbtns">
     <a class="hbtn" href="https://www.notion.so/169ff260f2a7415cbb98ac89d586be50" target="_blank">↗ Notion</a>
-    <button class="hbtn rust" id="rbtn" onclick="loadSpots()">↻</button>
+    <button class="hbtn red" id="rbtn" onclick="loadSpots()">↻</button>
   </div>
 </header>
 
@@ -228,11 +259,9 @@ document.addEventListener('DOMContentLoaded', function() {
   var map = L.map('map',{zoomControl:false}).setView([-6.2,106.8],11);
   L.control.zoom({position:'topright'}).addTo(map);
 
-  // OSM = 100% free forever, no API key, no 401!
-  // CSS filter: invert + hue-rotate = dark moody map
+  // OSM standard — 100% free, grayscale via CSS filter
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    maxZoom:19,
-    attribution:'© OpenStreetMap contributors'
+    maxZoom:19, attribution:'© OpenStreetMap contributors'
   }).addTo(map);
 
   var ALL=[], MARKERS=[], activeFilter='all', sheetOpen=false;
@@ -242,26 +271,19 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('sheet').classList.toggle('open',sheetOpen);
   };
 
-  var MOODS={
-    '✨ Vibes banget':{ color:'#ff6040', grad:'linear-gradient(145deg,#ff7055,#e03010)', emoji:'✨' },
-    '😊 Seru':        { color:'#f5c030', grad:'linear-gradient(145deg,#ffd045,#d4a010)', emoji:'😊' },
-    '😐 Biasa aja':   { color:'#60c878', grad:'linear-gradient(145deg,#70d888,#409858)', emoji:'😐' },
-    '😬 Awkward':     { color:'#b0b0b0', grad:'linear-gradient(145deg,#c8c8c8,#888888)', emoji:'😬' },
-  };
-  var DEF={color:'#eeeeee',grad:'linear-gradient(145deg,#fff,#ccc)',emoji:'📍'};
-  function gm(mood){return MOODS[mood]||DEF;}
-
-  function mkIcon(mood,active){
-    var m=gm(mood),s=active?44:36,ps=active?17:13;
+  // Folium-style circular marker
+  function mkIcon(active) {
+    var s = active ? 26 : 20;
     return L.divIcon({
-      html:'<div class="m3d '+(active?'active':'')+'" style="width:'+s+'px;height:'+(s+14)+'px">'
-          +(active?'<div class="mpulse" style="border-color:'+m.color+'"></div>':'')
-          +'<div class="mpin" style="width:'+s+'px;height:'+(s+6)+'px;background:'+m.grad+'">'
-          +'<span class="memoji" style="font-size:'+ps+'px">'+m.emoji+'</span>'
-          +'</div>'
-          +'<div class="mshadow"></div>'
-          +'</div>',
-      className:'',iconSize:[s,s+20],iconAnchor:[s/2,s+12],popupAnchor:[0,-(s+12)]
+      html: '<div class="fmarker '+(active?'active':'')+'" style="width:'+s+'px;height:'+(s+8)+'px">'
+          + (active ? '<div class="fmarker-pulse"></div>' : '')
+          + '<div class="fmarker-circle"><div class="fmarker-dot"></div></div>'
+          + '<div class="fmarker-shadow"></div>'
+          + '</div>',
+      className: '',
+      iconSize: [s, s+8],
+      iconAnchor: [s/2, s+6],
+      popupAnchor: [0, -(s+6)]
     });
   }
 
@@ -299,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var lat=parseFloat(spot.lat),lng=parseFloat(spot.lng);
       if(isNaN(lat)||isNaN(lng)) return;
       bounds.push([lat,lng]);
-      var mk=L.marker([lat,lng],{icon:mkIcon(spot.mood,false)}).addTo(map);
+      var mk=L.marker([lat,lng],{icon:mkIcon(false)}).addTo(map);
       mk.bindPopup(popHtml(spot),{maxWidth:260});
       mk.on('click',function(){activate(i);});
       MARKERS.push(mk);
@@ -308,13 +330,12 @@ document.addEventListener('DOMContentLoaded', function() {
       var el=document.createElement('div');
       el.className='card'; el.dataset.i=i;
       var thumb=spot.photos&&spot.photos[0]?spot.photos[0]:'';
-      var mc=gm(spot.mood);
-      el.innerHTML='<div class="cthumb" style="background:'+mc.color+'18">'
-        +(thumb?'<img src="'+thumb+'" onerror="this.parentElement.innerHTML=\''+mc.emoji+'\'">':mc.emoji)
+      el.innerHTML='<div class="cthumb" style="background:#e0202015">'
+        +(thumb?'<img src="'+thumb+'" onerror="this.parentElement.innerHTML=\'📍\'">':'📍')
         +'</div><div class="cbody">'
         +'<div class="cname">'+spot.name+'</div>'
         +'<div class="cmeta"><span style="color:var(--gold)">'+(spot.rating||'')+'</span><span>'+fd+'</span>'+(spot.kota?'<span>📍'+spot.kota+'</span>':'')+'</div>'
-        +(spot.mood?'<div class="cmood" style="color:'+mc.color+';border-color:'+mc.color+'">'+spot.mood+'</div>':'')
+        +(spot.mood?'<div class="cmood">'+spot.mood+'</div>':'')
         +(spot.story?'<div class="cstory">'+spot.story+'</div>':'')
         +'</div>';
       el.onclick=function(){activate(i);};
@@ -326,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function activate(i){
-    ALL.forEach(function(_,j){if(MARKERS[j])MARKERS[j].setIcon(mkIcon(ALL[j].mood,j===i));});
+    ALL.forEach(function(_,j){if(MARKERS[j])MARKERS[j].setIcon(mkIcon(j===i));});
     if(MARKERS[i]){
       var lat=parseFloat(ALL[i].lat),lng=parseFloat(ALL[i].lng);
       if(!isNaN(lat)&&!isNaN(lng)) map.setView([lat,lng],Math.max(map.getZoom(),14),{animate:true});

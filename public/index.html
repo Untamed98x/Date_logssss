@@ -37,8 +37,82 @@ header{
 
 #map{position:fixed;top:52px;left:0;right:0;bottom:0;z-index:1}
 
-/* Stamen Toner = high contrast B&W, looks incredible */
-.leaflet-tile-pane { filter: contrast(1.1); }
+/* B&W Stamen Toner map */
+.leaflet-tile-pane{filter:grayscale(1) contrast(1.15) brightness(1.05)}
+
+/* ── 3D MARKER STYLES ── */
+.marker-3d {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  filter: drop-shadow(2px 6px 4px rgba(0,0,0,0.4));
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+.marker-3d:hover {
+  transform: translateY(-4px) scale(1.1);
+  filter: drop-shadow(2px 10px 8px rgba(0,0,0,0.5));
+}
+.marker-3d.big {
+  transform: translateY(-4px) scale(1.15);
+  filter: drop-shadow(2px 10px 8px rgba(0,0,0,0.5));
+}
+.marker-pin {
+  width: 36px;
+  height: 44px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 3D effect via gradients */
+  box-shadow:
+    inset -3px -3px 6px rgba(0,0,0,0.25),
+    inset 2px 2px 4px rgba(255,255,255,0.3);
+}
+.marker-pin::before {
+  content: '';
+  position: absolute;
+  top: 4px; left: 4px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.35);
+}
+.marker-emoji {
+  transform: rotate(45deg);
+  font-size: 14px;
+  line-height: 1;
+  position: relative;
+  z-index: 1;
+}
+/* Shadow dot below marker */
+.marker-shadow {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 6px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 50%;
+  filter: blur(2px);
+}
+/* Pulse ring for active marker */
+.marker-pulse {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  animation: pulse-ring 1.5s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes pulse-ring {
+  0%  { transform: translate(-50%,-50%) scale(0.5); opacity: 0.8; }
+  100%{ transform: translate(-50%,-50%) scale(1.8); opacity: 0; }
+}
 
 /* bottom sheet */
 .sheet{
@@ -100,24 +174,24 @@ header{
 /* popup */
 .leaflet-popup-content-wrapper{
   border-radius:0!important;border:2px solid var(--ink)!important;
-  box-shadow:4px 4px 0 rgba(0,0,0,.2)!important;padding:0!important;
+  box-shadow:5px 5px 0 rgba(0,0,0,.15)!important;padding:0!important;
   font-family:'DM Mono',monospace!important;
-  width:255px;background:var(--paper)!important;
+  width:258px;background:var(--paper)!important;
 }
 .leaflet-popup-tip{background:var(--ink)!important}
 .leaflet-popup-content{margin:0!important;width:100%!important}
-.pg{height:135px;overflow:hidden;position:relative;background:linear-gradient(135deg,var(--warm),var(--cream))}
-.pg img{width:100%;height:135px;object-fit:cover;position:absolute;opacity:0;transition:opacity .3s}
+.pg{height:140px;overflow:hidden;position:relative;background:linear-gradient(135deg,var(--warm),var(--cream))}
+.pg img{width:100%;height:140px;object-fit:cover;position:absolute;opacity:0;transition:opacity .3s}
 .pg img.show{opacity:1}
-.pg .ph{width:100%;height:135px;display:flex;align-items:center;justify-content:center;font-size:2rem}
+.pg .ph{width:100%;height:140px;display:flex;align-items:center;justify-content:center;font-size:2.2rem}
 .pdots{position:absolute;bottom:6px;right:7px;display:flex;gap:3px;z-index:10}
 .pdot{width:5px;height:5px;background:rgba(255,255,255,.4);cursor:pointer}
 .pdot.on{background:#fff}
-.pb{padding:11px 13px 10px}
-.pn{font-family:'Playfair Display',serif;font-size:.93rem;font-weight:700;margin-bottom:3px}
-.pr{display:flex;justify-content:space-between;margin-bottom:6px;font-size:.57rem}
-.pd{color:#aaa}.prat{color:var(--gold);font-size:.75rem}
-.ps{font-size:.63rem;line-height:1.6;color:#444;border-left:2px solid var(--rust);padding-left:8px;font-style:italic;margin-bottom:8px}
+.pb{padding:12px 13px 10px}
+.pn{font-family:'Playfair Display',serif;font-size:.95rem;font-weight:700;margin-bottom:3px}
+.pr{display:flex;justify-content:space-between;margin-bottom:6px;font-size:.58rem}
+.pd{color:#aaa}.prat{color:var(--gold);font-size:.76rem}
+.ps{font-size:.64rem;line-height:1.65;color:#444;border-left:2px solid var(--rust);padding-left:8px;font-style:italic;margin-bottom:8px}
 .pf{display:flex;justify-content:space-between;border-top:1px solid var(--warm);padding-top:6px;font-size:.6rem}
 .pm{color:var(--rust);text-decoration:none;border-bottom:1px solid var(--rust)}
 
@@ -185,48 +259,84 @@ document.addEventListener('DOMContentLoaded', function() {
   var map = L.map('map', {zoomControl:false}).setView([-6.2, 106.8], 11);
   L.control.zoom({position:'topright'}).addTo(map);
 
-  // ── STAMEN TONER — crisp black & white map ──
+  // B&W Stamen Toner
   L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '© Stadia Maps © Stamen Design © OpenMapTiles © OpenStreetMap'
+    maxZoom:20,
+    attribution:'© Stadia Maps © Stamen Design © OpenStreetMap'
   }).addTo(map);
 
-  var ALL=[], MARKERS=[], activeFilter='all', sheetOpen=false;
+  var ALL=[], MARKERS=[], activeFilter='all', sheetOpen=false, activeIdx=-1;
 
   window.toggleSheet = function() {
     sheetOpen = !sheetOpen;
     document.getElementById('sheet').classList.toggle('open', sheetOpen);
   };
 
-  // Mood colors — pop against B&W map
-  var MC={'✨ Vibes banget':'#e8624a','😊 Seru':'#c9a84c','😐 Biasa aja':'#7a9e7e','😬 Awkward':'#aaaaaa'};
-  var ME={'✨ Vibes banget':'✨','😊 Seru':'😊','😐 Biasa aja':'😐','😬 Awkward':'😬'};
+  // Mood config — vivid colors pop on B&W map
+  var MOODS = {
+    '✨ Vibes banget': { color:'#e05c3a', grad:'linear-gradient(135deg,#e8624a,#c4441f)', emoji:'✨' },
+    '😊 Seru':         { color:'#c9a84c', grad:'linear-gradient(135deg,#d4b55a,#a8872e)', emoji:'😊' },
+    '😐 Biasa aja':    { color:'#6b9e7a', grad:'linear-gradient(135deg,#7aae8a,#4e7a5c)', emoji:'😐' },
+    '😬 Awkward':      { color:'#9e9e9e', grad:'linear-gradient(135deg,#b0b0b0,#787878)', emoji:'😬' },
+  };
+  var DEFAULT_MOOD = { color:'#1a1410', grad:'linear-gradient(135deg,#333,#1a1410)', emoji:'📍' };
 
-  function mkIcon(mood, big) {
-    var c=MC[mood]||'#1a1410', e=ME[mood]||'📍', s=big?42:34;
+  function getMood(mood) { return MOODS[mood] || DEFAULT_MOOD; }
+
+  function mkIcon(mood, active) {
+    var m = getMood(mood);
+    var sz = active ? 42 : 36;
+    var pulse = active
+      ? '<div class="marker-pulse" style="color:'+m.color+'"></div>'
+      : '';
     return L.divIcon({
-      html:'<div style="width:'+s+'px;height:'+s+'px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:'+c+';border:3px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.4)"><span style="transform:rotate(45deg);font-size:'+(big?15:12)+'px">'+e+'</span></div>',
-      className:'', iconSize:[s,s], iconAnchor:[s/2,s], popupAnchor:[0,-s]
+      html: '<div class="marker-3d '+(active?'big':'')+'" style="width:'+sz+'px;height:'+(sz+10)+'px">'
+          + pulse
+          + '<div class="marker-pin" style="background:'+m.grad+';width:'+sz+'px;height:'+(sz+8)+'px">'
+          + '<span class="marker-emoji" style="font-size:'+(active?16:13)+'px">' + m.emoji + '</span>'
+          + '</div>'
+          + '<div class="marker-shadow"></div>'
+          + '</div>',
+      className: '',
+      iconSize: [sz, sz+18],
+      iconAnchor: [sz/2, sz+10],
+      popupAnchor: [0, -(sz+10)]
     });
   }
 
   window.cycP = function(dot, idx) {
-    var g=dot.closest('.pg');
+    var g = dot.closest('.pg');
     g.querySelectorAll('img').forEach(function(img,i){img.classList.toggle('show',i===idx);});
     g.querySelectorAll('.pdot').forEach(function(d,i){d.classList.toggle('on',i===idx);});
   };
 
   function popHtml(spot) {
-    var photos=spot.photos||[], gal='';
+    var photos = spot.photos||[], gal='';
     if(photos.length){
-      var imgs=photos.map(function(u,i){return '<img src="'+u+'" class="'+(i===0?'show':'')+'" onerror="this.style.display=\'none\'">';}).join('');
-      var dots=photos.length>1?'<div class="pdots">'+photos.map(function(_,i){return '<div class="pdot '+(i===0?'on':'')+'" onclick="cycP(this,'+i+')"></div>';}).join('')+'</div>':'';
-      gal='<div class="pg">'+imgs+dots+'</div>';
+      var imgs = photos.map(function(u,i){
+        return '<img src="'+u+'" class="'+(i===0?'show':'')+'" onerror="this.style.display=\'none\'">';
+      }).join('');
+      var dots = photos.length>1
+        ? '<div class="pdots">'+photos.map(function(_,i){
+            return '<div class="pdot '+(i===0?'on':'')+'" onclick="cycP(this,'+i+')"></div>';
+          }).join('')+'</div>'
+        : '';
+      gal = '<div class="pg">'+imgs+dots+'</div>';
     } else {
-      gal='<div class="pg"><div class="ph">🌃</div></div>';
+      gal = '<div class="pg"><div class="ph">🌃</div></div>';
     }
-    var fd=spot.date?new Date(spot.date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}):'—';
-    return '<div>'+gal+'<div class="pb"><div class="pn">'+spot.name+'</div><div class="pr"><span class="pd">'+fd+(spot.kota?' · '+spot.kota:'')+'</span><span class="prat">'+(spot.rating||'')+'</span></div>'+(spot.story?'<div class="ps">'+spot.story+'</div>':'')+'<div class="pf"><span>'+(spot.mood||'')+'</span>'+(spot.gmaps?'<a class="pm" href="'+spot.gmaps+'" target="_blank">↗ Maps</a>':'')+'</div></div></div>';
+    var fd = spot.date
+      ? new Date(spot.date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})
+      : '—';
+    return '<div>'+gal
+      +'<div class="pb">'
+      +'<div class="pn">'+spot.name+'</div>'
+      +'<div class="pr"><span class="pd">'+fd+(spot.kota?' · '+spot.kota:'')+'</span>'
+      +'<span class="prat">'+(spot.rating||'')+'</span></div>'
+      +(spot.story?'<div class="ps">'+spot.story+'</div>':'')
+      +'<div class="pf"><span>'+(spot.mood||'')+'</span>'
+      +(spot.gmaps?'<a class="pm" href="'+spot.gmaps+'" target="_blank">↗ Maps</a>':'')
+      +'</div></div></div>';
   }
 
   function render(spots) {
@@ -241,47 +351,67 @@ document.addEventListener('DOMContentLoaded', function() {
       var lat=parseFloat(spot.lat), lng=parseFloat(spot.lng);
       if(isNaN(lat)||isNaN(lng)) return;
       bounds.push([lat,lng]);
-      var m=L.marker([lat,lng],{icon:mkIcon(spot.mood,false)}).addTo(map);
-      m.bindPopup(popHtml(spot),{maxWidth:255});
-      m.on('click',function(){activate(i);});
+
+      var m = L.marker([lat,lng], {icon:mkIcon(spot.mood, false)}).addTo(map);
+      m.bindPopup(popHtml(spot), {maxWidth:258});
+      m.on('click', function(){activate(i);});
       MARKERS.push(m);
 
-      var fd=spot.date?new Date(spot.date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'}):'';
-      var el=document.createElement('div');
+      var fd = spot.date
+        ? new Date(spot.date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'})
+        : '';
+      var el = document.createElement('div');
       el.className='card'; el.dataset.i=i;
-      var thumb=spot.photos&&spot.photos[0]?spot.photos[0]:'';
-      el.innerHTML='<div class="card-thumb">'+(thumb?'<img src="'+thumb+'" onerror="this.parentElement.textContent=\'📍\'">':'📍')+'</div><div class="card-body"><div class="card-name">'+spot.name+'</div><div class="card-meta"><span style="color:var(--gold)">'+(spot.rating||'')+'</span><span>'+fd+'</span>'+(spot.kota?'<span>📍'+spot.kota+'</span>':'')+'</div>'+(spot.mood?'<div class="card-mood">'+spot.mood+'</div>':'')+(spot.story?'<div class="card-story">'+spot.story+'</div>':'')+'</div>';
-      el.onclick=function(){activate(i);};
+      var thumb = spot.photos&&spot.photos[0] ? spot.photos[0] : '';
+      var mc = getMood(spot.mood);
+      el.innerHTML =
+        '<div class="card-thumb" style="background:'+mc.color+'20">'
+        +(thumb?'<img src="'+thumb+'" onerror="this.parentElement.innerHTML=\''+mc.emoji+'\'">':mc.emoji)
+        +'</div>'
+        +'<div class="card-body">'
+        +'<div class="card-name">'+spot.name+'</div>'
+        +'<div class="card-meta"><span style="color:var(--gold)">'+(spot.rating||'')+'</span>'
+        +'<span>'+fd+'</span>'+(spot.kota?'<span>📍'+spot.kota+'</span>':'')+'</div>'
+        +(spot.mood?'<div class="card-mood" style="background:'+mc.color+'22;border-left:2px solid '+mc.color+'">'+spot.mood+'</div>':'')
+        +(spot.story?'<div class="card-story">'+spot.story+'</div>':'')
+        +'</div>';
+      el.onclick = function(){ activate(i); };
       document.getElementById('cards').appendChild(el);
     });
-    if(bounds.length) map.fitBounds(bounds,{padding:[60,60]});
+
+    if(bounds.length) map.fitBounds(bounds, {padding:[60,60]});
     buildFilters();
     updateStats(spots);
-    document.getElementById('psub').textContent=spots.length+' tempat ter-log';
+    document.getElementById('psub').textContent = spots.length+' tempat ter-log';
   }
 
   function activate(i) {
-    ALL.forEach(function(_,j){ if(MARKERS[j]) MARKERS[j].setIcon(mkIcon(ALL[j].mood, j===i)); });
+    activeIdx = i;
+    ALL.forEach(function(_,j){
+      if(MARKERS[j]) MARKERS[j].setIcon(mkIcon(ALL[j].mood, j===i));
+    });
     if(MARKERS[i]){
       var lat=parseFloat(ALL[i].lat), lng=parseFloat(ALL[i].lng);
-      if(!isNaN(lat)&&!isNaN(lng)) map.setView([lat,lng],Math.max(map.getZoom(),14),{animate:true});
+      if(!isNaN(lat)&&!isNaN(lng)) map.setView([lat,lng], Math.max(map.getZoom(),14), {animate:true});
       MARKERS[i].openPopup();
     }
     document.querySelectorAll('.card').forEach(function(c,j){
-      c.classList.toggle('active',j===i);
+      c.classList.toggle('active', j===i);
       if(j===i) c.scrollIntoView({behavior:'smooth',block:'nearest'});
     });
-    if(!sheetOpen){sheetOpen=true;document.getElementById('sheet').classList.add('open');}
+    if(!sheetOpen){ sheetOpen=true; document.getElementById('sheet').classList.add('open'); }
   }
 
   function buildFilters(){
-    var tags=new Set(); ALL.forEach(function(s){(s.tags||[]).forEach(function(t){tags.add(t);});});
+    var tags=new Set();
+    ALL.forEach(function(s){(s.tags||[]).forEach(function(t){tags.add(t);});});
     var row=document.getElementById('frow');
     row.innerHTML='<button class="chip '+(activeFilter==='all'?'active':'')+'" onclick="applyFilter(\'all\',this)">Semua</button>';
     tags.forEach(function(t){
       var b=document.createElement('button');
       b.className='chip '+(activeFilter===t?'active':'');
-      b.textContent=t; b.onclick=function(){applyFilter(t,b);};
+      b.textContent=t;
+      b.onclick=function(){applyFilter(t,b);};
       row.appendChild(b);
     });
   }
@@ -292,7 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
     btn.classList.add('active');
     ALL.forEach(function(s,i){
       var show=f==='all'||(s.tags||[]).indexOf(f)>-1;
-      if(MARKERS[i]){if(show)map.addLayer(MARKERS[i]);else map.removeLayer(MARKERS[i]);}
+      if(MARKERS[i]){ if(show) map.addLayer(MARKERS[i]); else map.removeLayer(MARKERS[i]); }
     });
     document.querySelectorAll('.card').forEach(function(c,i){
       c.style.display=(f==='all'||(ALL[i]&&(ALL[i].tags||[]).indexOf(f)>-1))?'':'none';
@@ -304,7 +434,9 @@ document.addEventListener('DOMContentLoaded', function() {
   function updateStats(spots){
     document.getElementById('scount').textContent=spots.length;
     var rated=spots.filter(function(s){return RM[s.rating];});
-    document.getElementById('srating').textContent=rated.length?(rated.reduce(function(a,s){return a+RM[s.rating];},0)/rated.length).toFixed(1):'—';
+    document.getElementById('srating').textContent=rated.length
+      ?(rated.reduce(function(a,s){return a+RM[s.rating];},0)/rated.length).toFixed(1)
+      :'—';
   }
 
   window.loadSpots = async function(){
@@ -325,10 +457,10 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   loadSpots().then(function(){
-    setTimeout(function(){document.getElementById('overlay').classList.add('gone');},800);
+    setTimeout(function(){ document.getElementById('overlay').classList.add('gone'); }, 800);
   });
 
-  map.on('click',function(){map.closePopup();});
+  map.on('click', function(){ map.closePopup(); });
 
 });
 </script>

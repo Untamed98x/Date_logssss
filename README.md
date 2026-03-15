@@ -26,26 +26,7 @@ datespots/
 3. Drag & drop folder `datespots` ini ke halaman upload
 
 ### Step 3 — Set Environment Variables
-Sebelum deploy, klik **Environment Variables** dan tambah:
 
-| Name | Value |
-|------|-------|
-| `NOTION_TOKEN` | Token Notion lo (dari notion.so/my-integrations) |
-| `NOTION_DB_ID` | `169ff260f2a7415cbb98ac89d586be50` |
-
-### Step 4 — Deploy!
-Klik **Deploy** — tunggu ~30 detik. Vercel kasih URL gratis kayak:
-`https://datespots-xxx.vercel.app`
-
----
-
-## 🔑 Cara Dapet Notion Token
-
-1. Buka [notion.so/my-integrations](https://www.notion.so/my-integrations)
-2. Klik **New integration**
-3. Nama: `Date Spots Map`, pilih workspace lo
-4. Klik **Submit** → copy **Internal Integration Token**
-5. Buka database Date Spots Log di Notion → klik `...` → **Connections** → tambah integration lo
 
 ---
 

@@ -14,7 +14,7 @@
   --rust:#c4622d; --gold:#c9a84c; --paper:#faf7f2;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;font-family:'DM Mono',monospace;background:var(--cream);color:var(--ink)}
+html,body{height:100%;overflow:hidden;font-family:'DM Mono',monospace;background:#1a1a1a;color:var(--ink)}
 
 header{
   position:fixed;top:0;left:0;right:0;z-index:1000;
@@ -37,111 +37,67 @@ header{
 
 #map{position:fixed;top:52px;left:0;right:0;bottom:0;z-index:1}
 
-/* B&W Stamen Toner map */
-.leaflet-tile-pane{filter:grayscale(1) contrast(1.15) brightness(1.05)}
-
-/* ── 3D MARKER STYLES ── */
-.marker-3d {
-  position: relative;
-  width: 36px;
-  height: 36px;
-  cursor: pointer;
-  filter: drop-shadow(2px 6px 4px rgba(0,0,0,0.4));
-  transition: transform 0.2s ease, filter 0.2s ease;
+/* 3D MARKER */
+.m3d{
+  position:relative;cursor:pointer;
+  filter:drop-shadow(2px 5px 4px rgba(0,0,0,0.5));
+  transition:transform .2s,filter .2s;
 }
-.marker-3d:hover {
-  transform: translateY(-4px) scale(1.1);
-  filter: drop-shadow(2px 10px 8px rgba(0,0,0,0.5));
+.m3d:hover{transform:translateY(-3px) scale(1.08);filter:drop-shadow(2px 8px 7px rgba(0,0,0,0.6));}
+.m3d.active{transform:translateY(-4px) scale(1.12);filter:drop-shadow(2px 10px 9px rgba(0,0,0,0.65));}
+.mpin{
+  border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:inset -3px -3px 6px rgba(0,0,0,.2),inset 2px 2px 4px rgba(255,255,255,.25);
+  position:relative;
 }
-.marker-3d.big {
-  transform: translateY(-4px) scale(1.15);
-  filter: drop-shadow(2px 10px 8px rgba(0,0,0,0.5));
+.mpin::before{
+  content:'';position:absolute;top:4px;left:4px;
+  width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.3);
 }
-.marker-pin {
-  width: 36px;
-  height: 44px;
-  border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg);
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* 3D effect via gradients */
-  box-shadow:
-    inset -3px -3px 6px rgba(0,0,0,0.25),
-    inset 2px 2px 4px rgba(255,255,255,0.3);
+.memoji{transform:rotate(45deg);position:relative;z-index:1;line-height:1;}
+.mshadow{
+  position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);
+  width:14px;height:5px;background:rgba(0,0,0,.3);
+  border-radius:50%;filter:blur(2px);
 }
-.marker-pin::before {
-  content: '';
-  position: absolute;
-  top: 4px; left: 4px;
-  width: 12px; height: 12px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.35);
+.mpulse{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:48px;height:48px;border-radius:50%;
+  border:2px solid;opacity:0;
+  animation:pulse 1.6s ease-out infinite;
+  pointer-events:none;
 }
-.marker-emoji {
-  transform: rotate(45deg);
-  font-size: 14px;
-  line-height: 1;
-  position: relative;
-  z-index: 1;
-}
-/* Shadow dot below marker */
-.marker-shadow {
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 16px;
-  height: 6px;
-  background: rgba(0,0,0,0.2);
-  border-radius: 50%;
-  filter: blur(2px);
-}
-/* Pulse ring for active marker */
-.marker-pulse {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 50px; height: 50px;
-  border-radius: 50%;
-  border: 2px solid currentColor;
-  animation: pulse-ring 1.5s ease-out infinite;
-  pointer-events: none;
-}
-@keyframes pulse-ring {
-  0%  { transform: translate(-50%,-50%) scale(0.5); opacity: 0.8; }
-  100%{ transform: translate(-50%,-50%) scale(1.8); opacity: 0; }
+@keyframes pulse{
+  0%{transform:translate(-50%,-50%) scale(.5);opacity:.9;}
+  100%{transform:translate(-50%,-50%) scale(2);opacity:0;}
 }
 
-/* bottom sheet */
+/* BOTTOM SHEET */
 .sheet{
   position:fixed;left:0;right:0;bottom:0;z-index:500;
   background:var(--paper);
   border-radius:18px 18px 0 0;
   border-top:2px solid var(--ink);
-  box-shadow:0 -4px 20px rgba(0,0,0,.15);
+  box-shadow:0 -4px 24px rgba(0,0,0,.3);
   transform:translateY(calc(100% - 78px));
   transition:transform .35s cubic-bezier(.4,0,.2,1);
-  max-height:78dvh;
-  display:flex;flex-direction:column;
+  max-height:78dvh;display:flex;flex-direction:column;
 }
 .sheet.open{transform:translateY(0)}
-.sheet-handle-area{padding:10px 16px 0;cursor:pointer;flex-shrink:0}
-.sheet-handle{width:38px;height:4px;background:var(--warm);border-radius:2px;margin:0 auto 10px}
-.sheet-peek{display:flex;align-items:center;justify-content:space-between;padding:0 2px 10px}
-.peek-title{font-family:'Playfair Display',serif;font-size:.9rem;font-weight:700}
-.peek-sub{font-size:.58rem;color:#aaa;letter-spacing:.08em;margin-top:2px}
-.sheet-stats{display:flex;gap:14px}
-.ss{display:flex;flex-direction:column;align-items:center;gap:1px}
-.ss-val{color:var(--gold);font-size:.78rem;font-weight:700}
-.ss-lbl{color:#bbb;font-size:.5rem;letter-spacing:.1em}
+.sha{padding:10px 16px 0;cursor:pointer;flex-shrink:0}
+.shh{width:38px;height:4px;background:var(--warm);border-radius:2px;margin:0 auto 10px}
+.shp{display:flex;align-items:center;justify-content:space-between;padding:0 2px 10px}
+.sht{font-family:'Playfair Display',serif;font-size:.9rem;font-weight:700}
+.shs{font-size:.58rem;color:#aaa;letter-spacing:.08em;margin-top:2px}
+.shst{display:flex;gap:14px}
+.sv{display:flex;flex-direction:column;align-items:center;gap:1px}
+.svv{color:var(--gold);font-size:.78rem;font-weight:700}
+.svl{color:#bbb;font-size:.5rem;letter-spacing:.1em}
 
-.filter-row{
-  display:flex;gap:6px;overflow-x:auto;
-  padding:0 16px 10px;flex-shrink:0;scrollbar-width:none;
-}
-.filter-row::-webkit-scrollbar{display:none}
+.frow{display:flex;gap:6px;overflow-x:auto;padding:0 16px 10px;flex-shrink:0;scrollbar-width:none}
+.frow::-webkit-scrollbar{display:none}
 .chip{
   padding:4px 10px;font-family:'DM Mono',monospace;font-size:.58rem;
   border:1px solid var(--warm);background:transparent;cursor:pointer;
@@ -159,22 +115,18 @@ header{
 }
 .card:active,.card.active{background:#ede8df}
 .card.active{border-left:3px solid var(--rust);padding-left:13px}
-.card-thumb{
-  width:50px;height:50px;flex-shrink:0;
-  background:var(--warm);overflow:hidden;
-  display:flex;align-items:center;justify-content:center;font-size:1.3rem;
-}
-.card-thumb img{width:50px;height:50px;object-fit:cover;display:block}
-.card-body{flex:1;min-width:0}
-.card-name{font-family:'Playfair Display',serif;font-size:.86rem;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card-meta{font-size:.57rem;color:#aaa;margin-bottom:3px;display:flex;gap:6px;flex-wrap:wrap}
-.card-mood{font-size:.57rem;padding:2px 5px;background:var(--warm);display:inline-block;margin-bottom:3px}
-.card-story{font-size:.63rem;line-height:1.5;color:#666;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cthumb{width:50px;height:50px;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:1.4rem;}
+.cthumb img{width:50px;height:50px;object-fit:cover;display:block}
+.cbody{flex:1;min-width:0}
+.cname{font-family:'Playfair Display',serif;font-size:.86rem;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmeta{font-size:.57rem;color:#aaa;margin-bottom:3px;display:flex;gap:6px;flex-wrap:wrap}
+.cmood{font-size:.57rem;padding:2px 6px;border-left:2px solid;display:inline-block;margin-bottom:3px}
+.cstory{font-size:.63rem;line-height:1.5;color:#666;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
-/* popup */
+/* POPUP */
 .leaflet-popup-content-wrapper{
   border-radius:0!important;border:2px solid var(--ink)!important;
-  box-shadow:5px 5px 0 rgba(0,0,0,.15)!important;padding:0!important;
+  box-shadow:5px 5px 0 rgba(0,0,0,.2)!important;padding:0!important;
   font-family:'DM Mono',monospace!important;
   width:258px;background:var(--paper)!important;
 }
@@ -195,13 +147,14 @@ header{
 .pf{display:flex;justify-content:space-between;border-top:1px solid var(--warm);padding-top:6px;font-size:.6rem}
 .pm{color:var(--rust);text-decoration:none;border-bottom:1px solid var(--rust)}
 
+/* OVERLAY */
 .overlay{
-  position:fixed;inset:0;background:var(--cream);z-index:9999;
+  position:fixed;inset:0;background:#1a1a1a;z-index:9999;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
   transition:opacity .4s;
 }
 .overlay.gone{opacity:0;pointer-events:none}
-.ot{font-family:'Playfair Display',serif;font-size:1.5rem;font-style:italic}
+.ot{font-family:'Playfair Display',serif;font-size:1.5rem;font-style:italic;color:var(--cream)}
 .dots{display:flex;gap:8px}
 .dot{width:7px;height:7px;background:var(--rust);animation:bounce .8s infinite alternate}
 .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
@@ -232,20 +185,20 @@ header{
 <div id="map"></div>
 
 <div class="sheet" id="sheet">
-  <div class="sheet-handle-area" onclick="toggleSheet()">
-    <div class="sheet-handle"></div>
-    <div class="sheet-peek">
+  <div class="sha" onclick="toggleSheet()">
+    <div class="shh"></div>
+    <div class="shp">
       <div>
-        <div class="peek-title">📍 Spots kita</div>
-        <div class="peek-sub" id="psub">Loading...</div>
+        <div class="sht">📍 Spots kita</div>
+        <div class="shs" id="psub">Loading...</div>
       </div>
-      <div class="sheet-stats">
-        <div class="ss"><div class="ss-val" id="scount">—</div><div class="ss-lbl">SPOTS</div></div>
-        <div class="ss"><div class="ss-val" id="srating">—</div><div class="ss-lbl">AVG ★</div></div>
+      <div class="shst">
+        <div class="sv"><div class="svv" id="scount">—</div><div class="svl">SPOTS</div></div>
+        <div class="sv"><div class="svv" id="srating">—</div><div class="svl">AVG ★</div></div>
       </div>
     </div>
   </div>
-  <div class="filter-row" id="frow">
+  <div class="frow" id="frow">
     <button class="chip active" onclick="applyFilter('all',this)">Semua</button>
   </div>
   <div class="cards" id="cards">
@@ -256,90 +209,82 @@ header{
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 
-  var map = L.map('map', {zoomControl:false}).setView([-6.2, 106.8], 11);
+  var map = L.map('map',{zoomControl:false}).setView([-6.2,106.8],11);
   L.control.zoom({position:'topright'}).addTo(map);
 
-  // B&W Stamen Toner
-  L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}{r}.png', {
-    maxZoom:20,
-    attribution:'© Stadia Maps © Stamen Design © OpenStreetMap'
-  }).addTo(map);
+  // Tile layer will be set after API responds with Stadia key
+  var tileLayer = null;
 
-  var ALL=[], MARKERS=[], activeFilter='all', sheetOpen=false, activeIdx=-1;
+  function initTiles(stadiaKey) {
+    if (tileLayer) map.removeLayer(tileLayer);
+    if (stadiaKey) {
+      // Stamen Toner B&W dengan API key dari Stadia
+      tileLayer = L.tileLayer(
+        'https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}{r}.png?api_key=' + stadiaKey,
+        { maxZoom:20, attribution:'© Stadia Maps © Stamen Design © OpenStreetMap' }
+      );
+    } else {
+      // Fallback: CartoDB Dark Matter (gratis, no key)
+      tileLayer = L.tileLayer(
+        'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        { subdomains:'abcd', maxZoom:20, attribution:'© OpenStreetMap © CARTO' }
+      );
+    }
+    tileLayer.addTo(map);
+  }
 
-  window.toggleSheet = function() {
-    sheetOpen = !sheetOpen;
-    document.getElementById('sheet').classList.toggle('open', sheetOpen);
+  var ALL=[], MARKERS=[], activeFilter='all', sheetOpen=false;
+
+  window.toggleSheet = function(){
+    sheetOpen=!sheetOpen;
+    document.getElementById('sheet').classList.toggle('open',sheetOpen);
   };
 
-  // Mood config — vivid colors pop on B&W map
   var MOODS = {
-    '✨ Vibes banget': { color:'#e05c3a', grad:'linear-gradient(135deg,#e8624a,#c4441f)', emoji:'✨' },
-    '😊 Seru':         { color:'#c9a84c', grad:'linear-gradient(135deg,#d4b55a,#a8872e)', emoji:'😊' },
-    '😐 Biasa aja':    { color:'#6b9e7a', grad:'linear-gradient(135deg,#7aae8a,#4e7a5c)', emoji:'😐' },
-    '😬 Awkward':      { color:'#9e9e9e', grad:'linear-gradient(135deg,#b0b0b0,#787878)', emoji:'😬' },
+    '✨ Vibes banget':{ color:'#ff6b4a', grad:'linear-gradient(135deg,#ff7c5e,#e04020)', emoji:'✨' },
+    '😊 Seru':        { color:'#f0c040', grad:'linear-gradient(135deg,#f5ce55,#d4a020)', emoji:'😊' },
+    '😐 Biasa aja':   { color:'#6abf7a', grad:'linear-gradient(135deg,#7acc8a,#4a9e5a)', emoji:'😐' },
+    '😬 Awkward':     { color:'#aaaaaa', grad:'linear-gradient(135deg,#c0c0c0,#888888)', emoji:'😬' },
   };
-  var DEFAULT_MOOD = { color:'#1a1410', grad:'linear-gradient(135deg,#333,#1a1410)', emoji:'📍' };
+  var DEF = { color:'#ffffff', grad:'linear-gradient(135deg,#fff,#ccc)', emoji:'📍' };
+  function gm(mood){ return MOODS[mood]||DEF; }
 
-  function getMood(mood) { return MOODS[mood] || DEFAULT_MOOD; }
-
-  function mkIcon(mood, active) {
-    var m = getMood(mood);
-    var sz = active ? 42 : 36;
-    var pulse = active
-      ? '<div class="marker-pulse" style="color:'+m.color+'"></div>'
-      : '';
+  function mkIcon(mood,active){
+    var m=gm(mood), s=active?42:34, ps=active?16:12;
     return L.divIcon({
-      html: '<div class="marker-3d '+(active?'big':'')+'" style="width:'+sz+'px;height:'+(sz+10)+'px">'
-          + pulse
-          + '<div class="marker-pin" style="background:'+m.grad+';width:'+sz+'px;height:'+(sz+8)+'px">'
-          + '<span class="marker-emoji" style="font-size:'+(active?16:13)+'px">' + m.emoji + '</span>'
-          + '</div>'
-          + '<div class="marker-shadow"></div>'
-          + '</div>',
-      className: '',
-      iconSize: [sz, sz+18],
-      iconAnchor: [sz/2, sz+10],
-      popupAnchor: [0, -(sz+10)]
+      html:'<div class="m3d '+(active?'active':'')+'" style="width:'+s+'px;height:'+(s+12)+'px">'
+          +(active?'<div class="mpulse" style="border-color:'+m.color+'"></div>':'')
+          +'<div class="mpin" style="width:'+s+'px;height:'+(s+4)+'px;background:'+m.grad+'">'
+          +'<span class="memoji" style="font-size:'+ps+'px">'+m.emoji+'</span>'
+          +'</div>'
+          +'<div class="mshadow"></div>'
+          +'</div>',
+      className:'', iconSize:[s,s+18], iconAnchor:[s/2,s+10], popupAnchor:[0,-(s+10)]
     });
   }
 
-  window.cycP = function(dot, idx) {
-    var g = dot.closest('.pg');
+  window.cycP=function(dot,idx){
+    var g=dot.closest('.pg');
     g.querySelectorAll('img').forEach(function(img,i){img.classList.toggle('show',i===idx);});
     g.querySelectorAll('.pdot').forEach(function(d,i){d.classList.toggle('on',i===idx);});
   };
 
-  function popHtml(spot) {
-    var photos = spot.photos||[], gal='';
+  function popHtml(spot){
+    var photos=spot.photos||[], gal='';
     if(photos.length){
-      var imgs = photos.map(function(u,i){
-        return '<img src="'+u+'" class="'+(i===0?'show':'')+'" onerror="this.style.display=\'none\'">';
-      }).join('');
-      var dots = photos.length>1
-        ? '<div class="pdots">'+photos.map(function(_,i){
-            return '<div class="pdot '+(i===0?'on':'')+'" onclick="cycP(this,'+i+')"></div>';
-          }).join('')+'</div>'
-        : '';
-      gal = '<div class="pg">'+imgs+dots+'</div>';
-    } else {
-      gal = '<div class="pg"><div class="ph">🌃</div></div>';
-    }
-    var fd = spot.date
-      ? new Date(spot.date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})
-      : '—';
-    return '<div>'+gal
-      +'<div class="pb">'
-      +'<div class="pn">'+spot.name+'</div>'
-      +'<div class="pr"><span class="pd">'+fd+(spot.kota?' · '+spot.kota:'')+'</span>'
-      +'<span class="prat">'+(spot.rating||'')+'</span></div>'
+      var imgs=photos.map(function(u,i){return '<img src="'+u+'" class="'+(i===0?'show':'')+'" onerror="this.style.display=\'none\'">';}).join('');
+      var dots=photos.length>1?'<div class="pdots">'+photos.map(function(_,i){return '<div class="pdot '+(i===0?'on':'')+'" onclick="cycP(this,'+i+')"></div>';}).join('')+'</div>':'';
+      gal='<div class="pg">'+imgs+dots+'</div>';
+    } else { gal='<div class="pg"><div class="ph">🌃</div></div>'; }
+    var fd=spot.date?new Date(spot.date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}):'—';
+    return '<div>'+gal+'<div class="pb"><div class="pn">'+spot.name+'</div>'
+      +'<div class="pr"><span class="pd">'+fd+(spot.kota?' · '+spot.kota:'')+'</span><span class="prat">'+(spot.rating||'')+'</span></div>'
       +(spot.story?'<div class="ps">'+spot.story+'</div>':'')
-      +'<div class="pf"><span>'+(spot.mood||'')+'</span>'
-      +(spot.gmaps?'<a class="pm" href="'+spot.gmaps+'" target="_blank">↗ Maps</a>':'')
-      +'</div></div></div>';
+      +'<div class="pf"><span>'+(spot.mood||'')+'</span>'+(spot.gmaps?'<a class="pm" href="'+spot.gmaps+'" target="_blank">↗ Maps</a>':'')+'</div>'
+      +'</div></div>';
   }
 
-  function render(spots) {
+  function render(spots){
     MARKERS.forEach(function(m){map.removeLayer(m);}); MARKERS=[];
     document.getElementById('cards').innerHTML='';
     if(!spots.length){
@@ -347,86 +292,65 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     var bounds=[];
-    spots.forEach(function(spot, i) {
+    spots.forEach(function(spot,i){
       var lat=parseFloat(spot.lat), lng=parseFloat(spot.lng);
       if(isNaN(lat)||isNaN(lng)) return;
       bounds.push([lat,lng]);
+      var mk=L.marker([lat,lng],{icon:mkIcon(spot.mood,false)}).addTo(map);
+      mk.bindPopup(popHtml(spot),{maxWidth:258});
+      mk.on('click',function(){activate(i);});
+      MARKERS.push(mk);
 
-      var m = L.marker([lat,lng], {icon:mkIcon(spot.mood, false)}).addTo(map);
-      m.bindPopup(popHtml(spot), {maxWidth:258});
-      m.on('click', function(){activate(i);});
-      MARKERS.push(m);
-
-      var fd = spot.date
-        ? new Date(spot.date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'})
-        : '';
-      var el = document.createElement('div');
+      var fd=spot.date?new Date(spot.date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'}):'';
+      var el=document.createElement('div');
       el.className='card'; el.dataset.i=i;
-      var thumb = spot.photos&&spot.photos[0] ? spot.photos[0] : '';
-      var mc = getMood(spot.mood);
-      el.innerHTML =
-        '<div class="card-thumb" style="background:'+mc.color+'20">'
+      var thumb=spot.photos&&spot.photos[0]?spot.photos[0]:'';
+      var mc=gm(spot.mood);
+      el.innerHTML='<div class="cthumb" style="background:'+mc.color+'22">'
         +(thumb?'<img src="'+thumb+'" onerror="this.parentElement.innerHTML=\''+mc.emoji+'\'">':mc.emoji)
-        +'</div>'
-        +'<div class="card-body">'
-        +'<div class="card-name">'+spot.name+'</div>'
-        +'<div class="card-meta"><span style="color:var(--gold)">'+(spot.rating||'')+'</span>'
-        +'<span>'+fd+'</span>'+(spot.kota?'<span>📍'+spot.kota+'</span>':'')+'</div>'
-        +(spot.mood?'<div class="card-mood" style="background:'+mc.color+'22;border-left:2px solid '+mc.color+'">'+spot.mood+'</div>':'')
-        +(spot.story?'<div class="card-story">'+spot.story+'</div>':'')
+        +'</div><div class="cbody">'
+        +'<div class="cname">'+spot.name+'</div>'
+        +'<div class="cmeta"><span style="color:var(--gold)">'+(spot.rating||'')+'</span><span>'+fd+'</span>'+(spot.kota?'<span>📍'+spot.kota+'</span>':'')+'</div>'
+        +(spot.mood?'<div class="cmood" style="color:'+mc.color+';border-color:'+mc.color+'">'+spot.mood+'</div>':'')
+        +(spot.story?'<div class="cstory">'+spot.story+'</div>':'')
         +'</div>';
-      el.onclick = function(){ activate(i); };
+      el.onclick=function(){activate(i);};
       document.getElementById('cards').appendChild(el);
     });
-
-    if(bounds.length) map.fitBounds(bounds, {padding:[60,60]});
-    buildFilters();
-    updateStats(spots);
-    document.getElementById('psub').textContent = spots.length+' tempat ter-log';
+    if(bounds.length) map.fitBounds(bounds,{padding:[60,60]});
+    buildFilters(); updateStats(spots);
+    document.getElementById('psub').textContent=spots.length+' tempat ter-log';
   }
 
-  function activate(i) {
-    activeIdx = i;
-    ALL.forEach(function(_,j){
-      if(MARKERS[j]) MARKERS[j].setIcon(mkIcon(ALL[j].mood, j===i));
-    });
+  function activate(i){
+    ALL.forEach(function(_,j){ if(MARKERS[j]) MARKERS[j].setIcon(mkIcon(ALL[j].mood,j===i)); });
     if(MARKERS[i]){
       var lat=parseFloat(ALL[i].lat), lng=parseFloat(ALL[i].lng);
-      if(!isNaN(lat)&&!isNaN(lng)) map.setView([lat,lng], Math.max(map.getZoom(),14), {animate:true});
+      if(!isNaN(lat)&&!isNaN(lng)) map.setView([lat,lng],Math.max(map.getZoom(),14),{animate:true});
       MARKERS[i].openPopup();
     }
     document.querySelectorAll('.card').forEach(function(c,j){
-      c.classList.toggle('active', j===i);
+      c.classList.toggle('active',j===i);
       if(j===i) c.scrollIntoView({behavior:'smooth',block:'nearest'});
     });
-    if(!sheetOpen){ sheetOpen=true; document.getElementById('sheet').classList.add('open'); }
+    if(!sheetOpen){sheetOpen=true;document.getElementById('sheet').classList.add('open');}
   }
 
   function buildFilters(){
-    var tags=new Set();
-    ALL.forEach(function(s){(s.tags||[]).forEach(function(t){tags.add(t);});});
+    var tags=new Set(); ALL.forEach(function(s){(s.tags||[]).forEach(function(t){tags.add(t);});});
     var row=document.getElementById('frow');
     row.innerHTML='<button class="chip '+(activeFilter==='all'?'active':'')+'" onclick="applyFilter(\'all\',this)">Semua</button>';
     tags.forEach(function(t){
-      var b=document.createElement('button');
-      b.className='chip '+(activeFilter===t?'active':'');
-      b.textContent=t;
-      b.onclick=function(){applyFilter(t,b);};
-      row.appendChild(b);
+      var b=document.createElement('button'); b.className='chip '+(activeFilter===t?'active':'');
+      b.textContent=t; b.onclick=function(){applyFilter(t,b);}; row.appendChild(b);
     });
   }
 
-  window.applyFilter = function(f,btn){
+  window.applyFilter=function(f,btn){
     activeFilter=f;
-    document.querySelectorAll('.chip').forEach(function(c){c.classList.remove('active');});
-    btn.classList.add('active');
-    ALL.forEach(function(s,i){
-      var show=f==='all'||(s.tags||[]).indexOf(f)>-1;
-      if(MARKERS[i]){ if(show) map.addLayer(MARKERS[i]); else map.removeLayer(MARKERS[i]); }
-    });
-    document.querySelectorAll('.card').forEach(function(c,i){
-      c.style.display=(f==='all'||(ALL[i]&&(ALL[i].tags||[]).indexOf(f)>-1))?'':'none';
-    });
+    document.querySelectorAll('.chip').forEach(function(c){c.classList.remove('active');}); btn.classList.add('active');
+    ALL.forEach(function(s,i){ var show=f==='all'||(s.tags||[]).indexOf(f)>-1; if(MARKERS[i]){if(show)map.addLayer(MARKERS[i]);else map.removeLayer(MARKERS[i]);} });
+    document.querySelectorAll('.card').forEach(function(c,i){ c.style.display=(f==='all'||(ALL[i]&&(ALL[i].tags||[]).indexOf(f)>-1))?'':'none'; });
     updateStats(ALL.filter(function(s){return f==='all'||(s.tags||[]).indexOf(f)>-1;}));
   };
 
@@ -434,34 +358,33 @@ document.addEventListener('DOMContentLoaded', function() {
   function updateStats(spots){
     document.getElementById('scount').textContent=spots.length;
     var rated=spots.filter(function(s){return RM[s.rating];});
-    document.getElementById('srating').textContent=rated.length
-      ?(rated.reduce(function(a,s){return a+RM[s.rating];},0)/rated.length).toFixed(1)
-      :'—';
+    document.getElementById('srating').textContent=rated.length?(rated.reduce(function(a,s){return a+RM[s.rating];},0)/rated.length).toFixed(1):'—';
   }
 
-  window.loadSpots = async function(){
+  window.loadSpots=async function(){
     var btn=document.getElementById('rbtn');
     btn.innerHTML='<span class="spin">↻</span>'; btn.disabled=true;
     try{
       var r=await fetch('/api/spots');
       if(!r.ok) throw new Error('API '+r.status);
       var data=await r.json();
-      ALL=data.spots||[];
-      render(ALL);
+
+      // Init map tiles dengan Stadia key kalau ada
+      initTiles(data.stadiaKey);
+
+      ALL=data.spots||[]; render(ALL);
     }catch(e){
+      // Fallback ke CartoDB kalau API gagal
+      initTiles(null);
       document.getElementById('cards').innerHTML='<div class="empty"><div class="ei">⚠️</div><div class="et">Gagal load</div><div class="es">'+e.message+'</div></div>';
       document.getElementById('psub').textContent='Error';
-    }finally{
-      btn.innerHTML='↻'; btn.disabled=false;
-    }
+    }finally{ btn.innerHTML='↻'; btn.disabled=false; }
   };
 
   loadSpots().then(function(){
-    setTimeout(function(){ document.getElementById('overlay').classList.add('gone'); }, 800);
+    setTimeout(function(){document.getElementById('overlay').classList.add('gone');},800);
   });
-
-  map.on('click', function(){ map.closePopup(); });
-
+  map.on('click',function(){map.closePopup();});
 });
 </script>
 </body>

@@ -3,11 +3,11 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const token    = process.env.NOTION_TOKEN;
-  const dbId     = process.env.NOTION_DB_ID;
-  const stadiaKey = process.env.STADIA_API_KEY;
+  const token      = process.env.NOTION_TOKEN;
+  const dbId       = process.env.NOTION_DB_ID;
+  const mapboxToken = process.env.MAPBOX_TOKEN;
 
-  if (!token || !dbId) return res.status(500).json({ error: 'Missing NOTION_TOKEN or NOTION_DB_ID' });
+  if (!token || !dbId) return res.status(500).json({ error: 'Missing env vars' });
 
   const dbRes = await fetch('https://api.notion.com/v1/databases/' + dbId + '/query', {
     method: 'POST',
@@ -33,7 +33,6 @@ module.exports = async function handler(req, res) {
     var photoRaw = txt(p['Foto URLs']);
     var photos = photoRaw ? photoRaw.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
 
-    // Fetch page blocks to get uploaded images if no Foto URLs
     if (photos.length === 0) {
       try {
         var blocksRes = await fetch('https://api.notion.com/v1/blocks/' + page.id + '/children?page_size=50', {
@@ -43,21 +42,18 @@ module.exports = async function handler(req, res) {
           var blocksData = await blocksRes.json();
           blocksData.results.forEach(function(block) {
             if (block.type === 'image') {
-              var imgUrl = block.image.type === 'file'
-                ? block.image.file.url
+              var imgUrl = block.image.type === 'file' ? block.image.file.url
                 : (block.image.type === 'external' ? block.image.external.url : '');
               if (imgUrl) photos.push(imgUrl);
             }
           });
-          // Also grab page cover
           if (page.cover) {
-            var coverUrl = page.cover.type === 'file'
-              ? page.cover.file.url
+            var coverUrl = page.cover.type === 'file' ? page.cover.file.url
               : (page.cover.type === 'external' ? page.cover.external.url : '');
             if (coverUrl && photos.indexOf(coverUrl) === -1) photos.unshift(coverUrl);
           }
         }
-      } catch(e) { /* silently skip */ }
+      } catch(e) {}
     }
 
     return {
@@ -78,6 +74,6 @@ module.exports = async function handler(req, res) {
 
   return res.status(200).json({
     spots: spots.filter(function(s) { return s.lat && s.lng; }),
-    stadiaKey: stadiaKey || null
+    mapboxToken: mapboxToken || null
   });
 };

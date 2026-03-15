@@ -2,521 +2,342 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🗺️ Date Spots</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Date Spots 🗺️</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<!-- Leaflet MUST load before any script that uses L -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-  :root {
-    --cream: #f5f0e8;
-    --warm:  #e8dcc8;
-    --ink:   #1a1410;
-    --rust:  #c4622d;
-    --sage:  #6b7c5e;
-    --gold:  #c9a84c;
-    --paper: #faf7f2;
-  }
+:root {
+  --cream:#f5f0e8; --warm:#e8dcc8; --ink:#1a1410;
+  --rust:#c4622d; --gold:#c9a84c; --paper:#faf7f2;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;font-family:'DM Mono',monospace;background:var(--cream);color:var(--ink)}
 
-  * { margin:0; padding:0; box-sizing:border-box; }
+header{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  background:var(--ink);color:var(--cream);
+  height:52px;padding:0 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:3px solid var(--rust);
+}
+.logo{font-family:'Playfair Display',serif;font-size:1.1rem;font-style:italic}
+.logo span{color:var(--gold)}
+.hbtns{display:flex;gap:8px}
+.hbtn{
+  background:transparent;border:1px solid rgba(255,255,255,.25);
+  color:var(--cream);padding:5px 11px;
+  font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.08em;
+  cursor:pointer;text-decoration:none;transition:all .2s;
+  display:inline-flex;align-items:center;white-space:nowrap;
+}
+.hbtn:hover,.hbtn.rust{background:var(--rust);border-color:var(--rust)}
 
-  body {
-    font-family: 'DM Mono', monospace;
-    background: var(--cream);
-    color: var(--ink);
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
+#map{position:fixed;top:52px;left:0;right:0;bottom:0;z-index:1}
+.leaflet-tile-pane{filter:sepia(15%) brightness(1.04)}
 
-  /* ── HEADER ── */
-  header {
-    background: var(--ink);
-    color: var(--cream);
-    padding: 13px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    z-index: 1000;
-    border-bottom: 3px solid var(--rust);
-    flex-shrink: 0;
-  }
-  .logo { font-family:'Playfair Display',serif; font-size:1.3rem; font-style:italic; }
-  .logo span { color: var(--gold); }
-  .header-right { display:flex; gap:10px; align-items:center; }
-  .pill-btn {
-    background: transparent;
-    border: 1px solid rgba(255,255,255,0.25);
-    color: var(--cream);
-    padding: 5px 13px;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    letter-spacing: 0.1em;
-    cursor: pointer;
-    text-decoration: none;
-    transition: all 0.2s;
-    display: inline-flex; align-items:center; gap:5px;
-  }
-  .pill-btn:hover { background: var(--rust); border-color: var(--rust); }
-  .pill-btn.rust { background: var(--rust); border-color: var(--rust); }
+/* bottom sheet */
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:500;
+  background:var(--paper);
+  border-radius:18px 18px 0 0;
+  border-top:2px solid var(--ink);
+  box-shadow:0 -4px 20px rgba(0,0,0,.12);
+  transform:translateY(calc(100% - 78px));
+  transition:transform .35s cubic-bezier(.4,0,.2,1);
+  max-height:78dvh;
+  display:flex;flex-direction:column;
+}
+.sheet.open{transform:translateY(0)}
+.sheet-handle-area{padding:10px 16px 0;cursor:pointer;flex-shrink:0}
+.sheet-handle{width:38px;height:4px;background:var(--warm);border-radius:2px;margin:0 auto 10px}
+.sheet-peek{display:flex;align-items:center;justify-content:space-between;padding:0 2px 10px}
+.peek-title{font-family:'Playfair Display',serif;font-size:.9rem;font-weight:700}
+.peek-sub{font-size:.58rem;color:#aaa;letter-spacing:.08em;margin-top:2px}
+.sheet-stats{display:flex;gap:14px}
+.ss{display:flex;flex-direction:column;align-items:center;gap:1px}
+.ss-val{color:var(--gold);font-size:.78rem;font-weight:700}
+.ss-lbl{color:#bbb;font-size:.5rem;letter-spacing:.1em}
 
-  /* ── LAYOUT ── */
-  .main { display:flex; flex:1; overflow:hidden; }
+.filter-row{
+  display:flex;gap:6px;overflow-x:auto;
+  padding:0 16px 10px;flex-shrink:0;scrollbar-width:none;
+}
+.filter-row::-webkit-scrollbar{display:none}
+.chip{
+  padding:4px 10px;font-family:'DM Mono',monospace;font-size:.58rem;
+  border:1px solid var(--warm);background:transparent;cursor:pointer;
+  color:var(--ink);white-space:nowrap;letter-spacing:.05em;
+  transition:all .15s;flex-shrink:0;
+}
+.chip.active,.chip:hover{background:var(--ink);color:var(--cream);border-color:var(--ink)}
 
-  /* ── SIDEBAR ── */
-  .sidebar {
-    width: 300px;
-    background: var(--paper);
-    border-right: 1px solid var(--warm);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-  .sidebar-top {
-    padding: 14px 18px 10px;
-    border-bottom: 1px solid var(--warm);
-    background: var(--cream);
-  }
-  .sidebar-label {
-    font-size: 0.58rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--rust);
-    margin-bottom: 8px;
-  }
-  .filter-row { display:flex; gap:6px; flex-wrap:wrap; }
-  .chip {
-    padding: 3px 9px;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.6rem;
-    border: 1px solid var(--warm);
-    background: transparent;
-    cursor: pointer;
-    color: var(--ink);
-    letter-spacing: 0.05em;
-    transition: all 0.15s;
-  }
-  .chip.active, .chip:hover { background:var(--ink); color:var(--cream); border-color:var(--ink); }
+.cards{overflow-y:auto;flex:1;padding-bottom:env(safe-area-inset-bottom,12px)}
+.cards::-webkit-scrollbar{display:none}
+.card{
+  padding:12px 16px;border-bottom:1px solid var(--warm);
+  cursor:pointer;transition:background .15s;
+  display:flex;gap:10px;align-items:flex-start;
+}
+.card:active,.card.active{background:#ede8df}
+.card.active{border-left:3px solid var(--rust);padding-left:13px}
+.card-thumb{
+  width:50px;height:50px;flex-shrink:0;
+  background:var(--warm);overflow:hidden;
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem;
+}
+.card-thumb img{width:50px;height:50px;object-fit:cover;display:block}
+.card-body{flex:1;min-width:0}
+.card-name{
+  font-family:'Playfair Display',serif;font-size:.86rem;font-weight:700;
+  margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.card-meta{font-size:.57rem;color:#aaa;margin-bottom:3px;display:flex;gap:6px;flex-wrap:wrap}
+.card-mood{font-size:.57rem;padding:2px 5px;background:var(--warm);display:inline-block;margin-bottom:3px}
+.card-story{font-size:.63rem;line-height:1.5;color:#666;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
-  .spots-list { overflow-y:auto; flex:1; }
-  .spots-list::-webkit-scrollbar { width:3px; }
-  .spots-list::-webkit-scrollbar-thumb { background:var(--warm); }
+/* popup */
+.leaflet-popup-content-wrapper{
+  border-radius:0!important;border:2px solid var(--ink)!important;
+  box-shadow:4px 4px 0 rgba(0,0,0,.2)!important;padding:0!important;
+  font-family:'DM Mono',monospace!important;
+  width:255px;background:var(--paper)!important;
+}
+.leaflet-popup-tip{background:var(--ink)!important}
+.leaflet-popup-content{margin:0!important;width:100%!important}
+.pg{height:135px;overflow:hidden;position:relative;background:linear-gradient(135deg,var(--warm),var(--cream))}
+.pg img{width:100%;height:135px;object-fit:cover;position:absolute;opacity:0;transition:opacity .3s}
+.pg img.show{opacity:1}
+.pg .ph{width:100%;height:135px;display:flex;align-items:center;justify-content:center;font-size:2rem}
+.pdots{position:absolute;bottom:6px;right:7px;display:flex;gap:3px;z-index:10}
+.pdot{width:5px;height:5px;background:rgba(255,255,255,.4);cursor:pointer}
+.pdot.on{background:#fff}
+.pb{padding:11px 13px 10px}
+.pn{font-family:'Playfair Display',serif;font-size:.93rem;font-weight:700;margin-bottom:3px}
+.pr{display:flex;justify-content:space-between;margin-bottom:6px;font-size:.57rem}
+.pd{color:#aaa} .prat{color:var(--gold);font-size:.75rem}
+.ps{font-size:.63rem;line-height:1.6;color:#444;border-left:2px solid var(--rust);padding-left:8px;font-style:italic;margin-bottom:8px}
+.pf{display:flex;justify-content:space-between;border-top:1px solid var(--warm);padding-top:6px;font-size:.6rem}
+.pm{color:var(--rust);text-decoration:none;border-bottom:1px solid var(--rust)}
 
-  .card {
-    padding: 13px 18px;
-    border-bottom: 1px solid var(--warm);
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  .card:hover { background: var(--cream); }
-  .card.active { background:#ede8df; border-left:3px solid var(--rust); padding-left:15px; }
-  .card-name { font-family:'Playfair Display',serif; font-size:0.92rem; font-weight:700; margin-bottom:3px; line-height:1.3; }
-  .card-meta { display:flex; gap:8px; font-size:0.58rem; color:#999; margin-bottom:5px; flex-wrap:wrap; }
-  .card-mood { font-size:0.6rem; padding:2px 6px; background:var(--warm); display:inline-block; margin-bottom:5px; }
-  .card-story { font-size:0.67rem; line-height:1.6; color:#555; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-  .card-tags { display:flex; gap:3px; flex-wrap:wrap; margin-top:5px; }
-  .tag { font-size:0.52rem; padding:2px 5px; border:1px solid var(--warm); color:#888; }
+/* overlay */
+.overlay{
+  position:fixed;inset:0;background:var(--cream);z-index:9999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  transition:opacity .4s;
+}
+.overlay.gone{opacity:0;pointer-events:none}
+.ot{font-family:'Playfair Display',serif;font-size:1.5rem;font-style:italic}
+.dots{display:flex;gap:8px}
+.dot{width:7px;height:7px;background:var(--rust);animation:bounce .8s infinite alternate}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes bounce{from{transform:translateY(0);opacity:.3}to{transform:translateY(-10px);opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin 1s linear infinite;display:inline-block}
 
-  .stats-strip {
-    background: var(--ink);
-    color: var(--cream);
-    padding: 7px 18px;
-    display: flex;
-    gap: 20px;
-    font-size: 0.58rem;
-    letter-spacing: 0.1em;
-    border-top: 1px solid #333;
-    flex-shrink: 0;
-  }
-  .stat-val { color: var(--gold); }
-
-  /* ── MAP ── */
-  #map { flex:1; z-index:1; }
-  .leaflet-tile-pane { filter: sepia(15%) brightness(1.04); }
-
-  /* ── POPUP ── */
-  .leaflet-popup-content-wrapper {
-    border-radius: 0 !important;
-    border: 2px solid var(--ink) !important;
-    box-shadow: 5px 5px 0 rgba(0,0,0,0.25) !important;
-    padding: 0 !important;
-    font-family: 'DM Mono', monospace !important;
-    min-width: 250px; max-width: 290px;
-    background: var(--paper) !important;
-  }
-  .leaflet-popup-tip { background: var(--ink) !important; }
-  .leaflet-popup-content { margin:0 !important; width:100% !important; }
-
-  .popup-gallery {
-    position:relative; height:150px; overflow:hidden;
-    background: linear-gradient(135deg, var(--warm), var(--cream));
-  }
-  .popup-gallery img {
-    width:100%; height:150px; object-fit:cover;
-    position:absolute; top:0; left:0;
-    opacity:0; transition:opacity 0.3s;
-  }
-  .popup-gallery img.show { opacity:1; }
-  .popup-gallery .placeholder {
-    width:100%; height:150px; display:flex;
-    align-items:center; justify-content:center;
-    font-size:2.2rem;
-  }
-  .photo-dots {
-    position:absolute; bottom:7px; right:8px;
-    display:flex; gap:4px; z-index:10;
-  }
-  .photo-dot {
-    width:6px; height:6px;
-    background:rgba(255,255,255,0.45); cursor:pointer;
-    transition:background 0.2s;
-  }
-  .photo-dot.on { background:#fff; }
-
-  .popup-body { padding:13px 15px 11px; }
-  .popup-name { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; margin-bottom:3px; line-height:1.3; }
-  .popup-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:7px; }
-  .popup-date { font-size:0.6rem; color:#999; letter-spacing:0.08em; }
-  .popup-rating { font-size:0.78rem; color:var(--gold); }
-  .popup-story {
-    font-size:0.67rem; line-height:1.65; color:#444;
-    border-left:2px solid var(--rust); padding-left:9px;
-    margin-bottom:10px; font-style:italic;
-  }
-  .popup-foot {
-    display:flex; justify-content:space-between; align-items:center;
-    border-top:1px solid var(--warm); padding-top:7px;
-  }
-  .popup-mood { font-size:0.68rem; }
-  .popup-gmaps {
-    font-size:0.58rem; letter-spacing:0.08em;
-    color:var(--rust); text-decoration:none;
-    border-bottom:1px solid var(--rust);
-  }
-  .popup-gmaps:hover { opacity:0.65; }
-
-  /* ── EMPTY / LOADING ── */
-  .center-msg {
-    flex:1; display:flex; flex-direction:column;
-    align-items:center; justify-content:center;
-    padding:24px; text-align:center; gap:10px;
-  }
-  .center-msg .ico { font-size:2.2rem; }
-  .center-msg .ttl { font-family:'Playfair Display',serif; font-size:0.95rem; font-style:italic; }
-  .center-msg .sub { font-size:0.62rem; color:#999; line-height:1.7; }
-
-  /* loading overlay */
-  .overlay {
-    position:fixed; inset:0; background:var(--cream);
-    z-index:9999; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; gap:16px;
-    transition:opacity 0.4s;
-  }
-  .overlay.gone { opacity:0; pointer-events:none; }
-  .overlay-title { font-family:'Playfair Display',serif; font-size:1.6rem; font-style:italic; }
-  .dots { display:flex; gap:8px; }
-  .dot {
-    width:8px; height:8px; background:var(--rust);
-    animation:bounce 0.8s infinite alternate;
-  }
-  .dot:nth-child(2){animation-delay:.2s}
-  .dot:nth-child(3){animation-delay:.4s}
-  @keyframes bounce {
-    from{transform:translateY(0);opacity:.3}
-    to{transform:translateY(-12px);opacity:1}
-  }
-
-  /* ── REFRESH SPIN ── */
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spinning { animation: spin 1s linear infinite; display:inline-block; }
-
-  /* ── MOBILE ── */
-  @media (max-width:600px) {
-    .sidebar { display:none; }
-  }
+.empty{padding:28px 16px;text-align:center}
+.ei{font-size:2rem;margin-bottom:8px}
+.et{font-family:'Playfair Display',serif;font-style:italic;margin-bottom:5px}
+.es{font-size:.6rem;color:#aaa;line-height:1.7}
 </style>
 </head>
 <body>
 
-<!-- Loading overlay -->
 <div class="overlay" id="overlay">
-  <div class="overlay-title">date <span style="color:var(--gold)">spots</span></div>
+  <div class="ot">date <span style="color:var(--gold)">spots</span></div>
   <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
 </div>
 
-<!-- Header -->
 <header>
   <div class="logo">date <span>spots</span></div>
-  <div class="header-right">
-    <a class="pill-btn" href="https://www.notion.so/169ff260f2a7415cbb98ac89d586be50" target="_blank">↗ Notion</a>
-    <button class="pill-btn rust" id="refresh-btn" onclick="loadSpots()">↻ Refresh</button>
+  <div class="hbtns">
+    <a class="hbtn" href="https://www.notion.so/169ff260f2a7415cbb98ac89d586be50" target="_blank">↗ Notion</a>
+    <button class="hbtn rust" id="rbtn" onclick="loadSpots()">↻</button>
   </div>
 </header>
 
-<!-- Main -->
-<div class="main">
-  <div class="sidebar">
-    <div class="sidebar-top">
-      <div class="sidebar-label">Filter by tag</div>
-      <div class="filter-row" id="filter-row">
-        <button class="chip active" onclick="applyFilter('all',this)">Semua</button>
+<div id="map"></div>
+
+<div class="sheet" id="sheet">
+  <div class="sheet-handle-area" onclick="toggleSheet()">
+    <div class="sheet-handle"></div>
+    <div class="sheet-peek">
+      <div>
+        <div class="peek-title">📍 Spots kita</div>
+        <div class="peek-sub" id="psub">Loading...</div>
       </div>
-    </div>
-    <div class="spots-list" id="spots-list">
-      <div class="center-msg">
-        <div class="ico">⏳</div>
-        <div class="ttl">Loading spots...</div>
+      <div class="sheet-stats">
+        <div class="ss"><div class="ss-val" id="scount">—</div><div class="ss-lbl">SPOTS</div></div>
+        <div class="ss"><div class="ss-val" id="srating">—</div><div class="ss-lbl">AVG ★</div></div>
       </div>
-    </div>
-    <div class="stats-strip" id="stats-strip" style="display:none">
-      <span>SPOTS <span class="stat-val" id="s-count">0</span></span>
-      <span>AVG ★ <span class="stat-val" id="s-rating">—</span></span>
-      <span>TOP <span class="stat-val" id="s-mood">—</span></span>
     </div>
   </div>
-  <div id="map"></div>
+  <div class="filter-row" id="frow">
+    <button class="chip active" onclick="applyFilter('all',this)">Semua</button>
+  </div>
+  <div class="cards" id="cards">
+    <div class="empty"><div class="ei">⏳</div><div class="et">Loading spots...</div></div>
+  </div>
 </div>
 
 <script>
-// ─────────────────────────────────────────────
-// MAP INIT
-// ─────────────────────────────────────────────
-const map = L.map('map',{zoomControl:false}).setView([-6.2,106.8],11);
-L.control.zoom({position:'bottomright'}).addTo(map);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  attribution:'© OpenStreetMap', maxZoom:19
-}).addTo(map);
+// ── wait for DOM + Leaflet ──
+document.addEventListener('DOMContentLoaded', function() {
 
-// ─────────────────────────────────────────────
-// STATE
-// ─────────────────────────────────────────────
-let ALL = [], MARKERS = [], activeIdx = -1, activeFilter = 'all';
+  // MAP
+  var map = L.map('map', {zoomControl:false}).setView([-6.2, 106.8], 11);
+  L.control.zoom({position:'topright'}).addTo(map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom:19, attribution:'© OSM'
+  }).addTo(map);
 
-// ─────────────────────────────────────────────
-// MARKER ICON
-// ─────────────────────────────────────────────
-const MOOD_COLOR = {
-  '✨ Vibes banget':'#6b7c5e',
-  '😊 Seru':'#c4622d',
-  '😐 Biasa aja':'#c9a84c',
-  '😬 Awkward':'#888',
-};
-const MOOD_EMOJI = {
-  '✨ Vibes banget':'✨','😊 Seru':'😊','😐 Biasa aja':'😐','😬 Awkward':'😬',
-};
+  var ALL=[], MARKERS=[], activeFilter='all', sheetOpen=false;
 
-function makeIcon(mood, big=false) {
-  const col  = MOOD_COLOR[mood] || '#1a1410';
-  const emo  = MOOD_EMOJI[mood] || '📍';
-  const sz   = big ? 42 : 34;
-  return L.divIcon({
-    html:`<div style="width:${sz}px;height:${sz}px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${col};border:3px solid #1a1410;display:flex;align-items:center;justify-content:center;box-shadow:3px 3px 0 rgba(0,0,0,.28)">
-      <span style="transform:rotate(45deg);font-size:${big?15:12}px">${emo}</span>
-    </div>`,
-    className:'', iconSize:[sz,sz], iconAnchor:[sz/2,sz], popupAnchor:[0,-sz]
-  });
-}
+  // SHEET
+  window.toggleSheet = function() {
+    sheetOpen = !sheetOpen;
+    document.getElementById('sheet').classList.toggle('open', sheetOpen);
+  };
 
-// ─────────────────────────────────────────────
-// POPUP HTML
-// ─────────────────────────────────────────────
-function popupHtml(spot) {
-  const photos = spot.photos || [];
-  let gallery = '';
-  if (photos.length) {
-    const imgs = photos.map((u,i)=>`<img src="${u}" class="${i===0?'show':''}" onerror="this.style.display='none'">`).join('');
-    const dots = photos.length>1
-      ? `<div class="photo-dots">${photos.map((_,i)=>`<div class="photo-dot ${i===0?'on':''}" onclick="cyclePic(this,${i})"></div>`).join('')}</div>`
-      : '';
-    gallery = `<div class="popup-gallery">${imgs}${dots}</div>`;
-  } else {
-    gallery = `<div class="popup-gallery"><div class="placeholder">🌃</div></div>`;
+  // ICONS
+  var MC={'✨ Vibes banget':'#6b7c5e','😊 Seru':'#c4622d','😐 Biasa aja':'#c9a84c','😬 Awkward':'#888'};
+  var ME={'✨ Vibes banget':'✨','😊 Seru':'😊','😐 Biasa aja':'😐','😬 Awkward':'😬'};
+  function mkIcon(mood, big) {
+    var c=MC[mood]||'#1a1410', e=ME[mood]||'📍', s=big?40:32;
+    return L.divIcon({
+      html:'<div style="width:'+s+'px;height:'+s+'px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:'+c+';border:3px solid #1a1410;display:flex;align-items:center;justify-content:center;box-shadow:2px 2px 0 rgba(0,0,0,.25)"><span style="transform:rotate(45deg);font-size:'+(big?14:11)+'px">'+e+'</span></div>',
+      className:'', iconSize:[s,s], iconAnchor:[s/2,s], popupAnchor:[0,-s]
+    });
   }
 
-  const fmtDate = spot.date
-    ? new Date(spot.date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})
-    : '—';
+  // POPUP
+  window.cycP = function(dot, idx) {
+    var g=dot.closest('.pg');
+    g.querySelectorAll('img').forEach(function(img,i){img.classList.toggle('show',i===idx);});
+    g.querySelectorAll('.pdot').forEach(function(d,i){d.classList.toggle('on',i===idx);});
+  };
 
-  return `<div>
-    ${gallery}
-    <div class="popup-body">
-      <div class="popup-name">${spot.name}</div>
-      <div class="popup-row">
-        <span class="popup-date">${fmtDate}${spot.kota?' · '+spot.kota:''}</span>
-        <span class="popup-rating">${spot.rating||''}</span>
-      </div>
-      ${spot.story?`<div class="popup-story">${spot.story}</div>`:''}
-      <div class="popup-foot">
-        <span class="popup-mood">${spot.mood||''}</span>
-        ${spot.gmaps?`<a class="popup-gmaps" href="${spot.gmaps}" target="_blank">↗ Maps</a>`:''}
-      </div>
-    </div>
-  </div>`;
-}
-
-function cyclePic(dot, idx) {
-  const g = dot.closest('.popup-gallery');
-  g.querySelectorAll('img').forEach((img,i)=>img.classList.toggle('show',i===idx));
-  g.querySelectorAll('.photo-dot').forEach((d,i)=>d.classList.toggle('on',i===idx));
-}
-
-// ─────────────────────────────────────────────
-// RENDER
-// ─────────────────────────────────────────────
-function render(spots) {
-  MARKERS.forEach(m=>map.removeLayer(m));
-  MARKERS = [];
-  document.getElementById('spots-list').innerHTML = '';
-
-  if (!spots.length) {
-    document.getElementById('spots-list').innerHTML = `
-      <div class="center-msg">
-        <div class="ico">🔍</div>
-        <div class="ttl">Belum ada spots</div>
-        <div class="sub">Tambahin entry baru di Notion,<br>lalu klik Refresh.</div>
-      </div>`;
-    document.getElementById('stats-strip').style.display='none';
-    return;
+  function popHtml(spot) {
+    var photos=spot.photos||[], gal='';
+    if(photos.length) {
+      var imgs=photos.map(function(u,i){return '<img src="'+u+'" class="'+(i===0?'show':'')+'" onerror="this.style.display=\'none\'">';}).join('');
+      var dots=photos.length>1?'<div class="pdots">'+photos.map(function(_,i){return '<div class="pdot '+(i===0?'on':'')+'" onclick="cycP(this,'+i+')"></div>';}).join('')+'</div>':'';
+      gal='<div class="pg">'+imgs+dots+'</div>';
+    } else {
+      gal='<div class="pg"><div class="ph">🌃</div></div>';
+    }
+    var fd=spot.date?new Date(spot.date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}):'—';
+    return '<div>'+gal+'<div class="pb"><div class="pn">'+spot.name+'</div><div class="pr"><span class="pd">'+fd+(spot.kota?' · '+spot.kota:'')+'</span><span class="prat">'+(spot.rating||'')+'</span></div>'+(spot.story?'<div class="ps">'+spot.story+'</div>':'')+'<div class="pf"><span>'+(spot.mood||'')+'</span>'+(spot.gmaps?'<a class="pm" href="'+spot.gmaps+'" target="_blank">↗ Maps</a>':'')+'</div></div></div>';
   }
 
-  const bounds = [];
+  // RENDER
+  function render(spots) {
+    MARKERS.forEach(function(m){map.removeLayer(m);}); MARKERS=[];
+    document.getElementById('cards').innerHTML='';
+    if(!spots.length){
+      document.getElementById('cards').innerHTML='<div class="empty"><div class="ei">🔍</div><div class="et">Belum ada spots</div><div class="es">Tambahin di Notion,<br>lalu klik ↻ Refresh</div></div>';
+      return;
+    }
+    var bounds=[];
+    spots.forEach(function(spot, i) {
+      var lat=parseFloat(spot.lat), lng=parseFloat(spot.lng);
+      if(isNaN(lat)||isNaN(lng)) return;
+      bounds.push([lat,lng]);
+      var m=L.marker([lat,lng],{icon:mkIcon(spot.mood,false)}).addTo(map);
+      m.bindPopup(popHtml(spot),{maxWidth:255});
+      m.on('click',function(){activate(i);});
+      MARKERS.push(m);
 
-  spots.forEach((spot, i) => {
-    const lat=parseFloat(spot.lat), lng=parseFloat(spot.lng);
-    if (isNaN(lat)||isNaN(lng)) return;
-    bounds.push([lat,lng]);
-
-    const marker = L.marker([lat,lng],{icon:makeIcon(spot.mood)}).addTo(map);
-    marker.bindPopup(popupHtml(spot),{maxWidth:290,className:'dp-popup'});
-    marker.on('click',()=>activate(i));
-    MARKERS.push(marker);
-
-    // sidebar card
-    const fmtDate = spot.date
-      ? new Date(spot.date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'})
-      : '';
-    const el = document.createElement('div');
-    el.className = 'card';
-    el.dataset.i  = i;
-    el.innerHTML  = `
-      <div class="card-name">${spot.name}</div>
-      <div class="card-meta">
-        <span style="color:var(--gold)">${spot.rating||''}</span>
-        <span>${fmtDate}</span>
-        ${spot.kota?`<span>📍${spot.kota}</span>`:''}
-      </div>
-      ${spot.mood?`<div class="card-mood">${spot.mood}</div>`:''}
-      ${spot.story?`<div class="card-story">${spot.story}</div>`:''}
-      ${spot.tags?.length?`<div class="card-tags">${spot.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>`:''}
-    `;
-    el.onclick = ()=>activate(i);
-    document.getElementById('spots-list').appendChild(el);
-  });
-
-  if (bounds.length) map.fitBounds(bounds,{padding:[40,40]});
-  buildFilters();
-  updateStats(spots);
-}
-
-function activate(i) {
-  activeIdx = i;
-  ALL.forEach((_,j)=>{ if(MARKERS[j]) MARKERS[j].setIcon(makeIcon(ALL[j].mood, j===i)); });
-  if (MARKERS[i]) {
-    const lat=parseFloat(ALL[i].lat), lng=parseFloat(ALL[i].lng);
-    if (!isNaN(lat)&&!isNaN(lng)) map.setView([lat,lng],Math.max(map.getZoom(),14),{animate:true});
-    MARKERS[i].openPopup();
+      var fd=spot.date?new Date(spot.date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short'}):'';
+      var el=document.createElement('div');
+      el.className='card'; el.dataset.i=i;
+      var thumb=spot.photos&&spot.photos[0]?spot.photos[0]:'';
+      el.innerHTML='<div class="card-thumb">'+(thumb?'<img src="'+thumb+'" onerror="this.parentElement.textContent=\'📍\'">':'📍')+'</div><div class="card-body"><div class="card-name">'+spot.name+'</div><div class="card-meta"><span style="color:var(--gold)">'+(spot.rating||'')+'</span><span>'+fd+'</span>'+(spot.kota?'<span>📍'+spot.kota+'</span>':'')+'</div>'+(spot.mood?'<div class="card-mood">'+spot.mood+'</div>':'')+(spot.story?'<div class="card-story">'+spot.story+'</div>':'')+'</div>';
+      el.onclick=function(){activate(i);};
+      document.getElementById('cards').appendChild(el);
+    });
+    if(bounds.length) map.fitBounds(bounds,{padding:[60,60]});
+    buildFilters();
+    updateStats(spots);
+    document.getElementById('psub').textContent=spots.length+' tempat ter-log';
   }
-  document.querySelectorAll('.card').forEach((c,j)=>{
-    c.classList.toggle('active',j===i);
-    if(j===i) c.scrollIntoView({behavior:'smooth',block:'nearest'});
-  });
-}
 
-// ─────────────────────────────────────────────
-// FILTER
-// ─────────────────────────────────────────────
-function buildFilters() {
-  const tags = new Set();
-  ALL.forEach(s=>(s.tags||[]).forEach(t=>tags.add(t)));
-  const row = document.getElementById('filter-row');
-  row.innerHTML = `<button class="chip ${activeFilter==='all'?'active':''}" onclick="applyFilter('all',this)">Semua</button>`;
-  tags.forEach(t=>{
-    const b=document.createElement('button');
-    b.className=`chip ${activeFilter===t?'active':''}`;
-    b.textContent=t;
-    b.onclick=()=>applyFilter(t,b);
-    row.appendChild(b);
-  });
-}
-
-function applyFilter(f,btn) {
-  activeFilter=f;
-  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
-  btn.classList.add('active');
-  ALL.forEach((s,i)=>{
-    const show = f==='all'||(s.tags||[]).includes(f);
-    if(MARKERS[i]) show ? map.addLayer(MARKERS[i]) : map.removeLayer(MARKERS[i]);
-  });
-  document.querySelectorAll('.card').forEach((c,i)=>{
-    c.style.display = (f==='all'||(ALL[i]?.tags||[]).includes(f)) ? '' : 'none';
-  });
-  updateStats(ALL.filter(s=>f==='all'||(s.tags||[]).includes(f)));
-}
-
-// ─────────────────────────────────────────────
-// STATS
-// ─────────────────────────────────────────────
-const RMAP={'⭐⭐⭐⭐⭐':5,'⭐⭐⭐⭐':4,'⭐⭐⭐':3,'⭐⭐':2,'⭐':1};
-function updateStats(spots) {
-  document.getElementById('stats-strip').style.display='flex';
-  document.getElementById('s-count').textContent=spots.length;
-  const mc={};
-  spots.forEach(s=>{ if(s.mood) mc[s.mood]=(mc[s.mood]||0)+1; });
-  const top=Object.entries(mc).sort((a,b)=>b[1]-a[1])[0];
-  document.getElementById('s-mood').textContent=top?top[0]:'—';
-  const rated=spots.filter(s=>RMAP[s.rating]);
-  document.getElementById('s-rating').textContent=rated.length
-    ?(rated.reduce((sum,s)=>sum+RMAP[s.rating],0)/rated.length).toFixed(1):'—';
-}
-
-// ─────────────────────────────────────────────
-// FETCH FROM API
-// ─────────────────────────────────────────────
-async function loadSpots() {
-  const btn=document.getElementById('refresh-btn');
-  btn.innerHTML='<span class="spinning">↻</span> Loading';
-  btn.disabled=true;
-  try {
-    const res  = await fetch('/api/spots');
-    if (!res.ok) throw new Error(`API error ${res.status}`);
-    const data = await res.json();
-    ALL = data.spots || [];
-    render(ALL);
-  } catch(e) {
-    console.error(e);
-    document.getElementById('spots-list').innerHTML=`
-      <div class="center-msg">
-        <div class="ico">⚠️</div>
-        <div class="ttl">Gagal load</div>
-        <div class="sub">${e.message}<br>Cek env vars di Vercel.</div>
-      </div>`;
-  } finally {
-    btn.innerHTML='↻ Refresh';
-    btn.disabled=false;
+  function activate(i) {
+    ALL.forEach(function(_,j){ if(MARKERS[j]) MARKERS[j].setIcon(mkIcon(ALL[j].mood, j===i)); });
+    if(MARKERS[i]) {
+      var lat=parseFloat(ALL[i].lat), lng=parseFloat(ALL[i].lng);
+      if(!isNaN(lat)&&!isNaN(lng)) map.setView([lat,lng], Math.max(map.getZoom(),14), {animate:true});
+      MARKERS[i].openPopup();
+    }
+    document.querySelectorAll('.card').forEach(function(c,j){
+      c.classList.toggle('active',j===i);
+      if(j===i) c.scrollIntoView({behavior:'smooth',block:'nearest'});
+    });
+    if(!sheetOpen) { sheetOpen=true; document.getElementById('sheet').classList.add('open'); }
   }
-}
 
-// ─────────────────────────────────────────────
-// INIT
-// ─────────────────────────────────────────────
-window.addEventListener('load', async ()=>{
-  await loadSpots();
-  setTimeout(()=>document.getElementById('overlay').classList.add('gone'),800);
-});
-map.on('click',()=>{ /* close nothing */ });
+  function buildFilters() {
+    var tags=new Set(); ALL.forEach(function(s){(s.tags||[]).forEach(function(t){tags.add(t);});});
+    var row=document.getElementById('frow');
+    row.innerHTML='<button class="chip '+(activeFilter==='all'?'active':'')+'" onclick="applyFilter(\'all\',this)">Semua</button>';
+    tags.forEach(function(t){
+      var b=document.createElement('button');
+      b.className='chip '+(activeFilter===t?'active':'');
+      b.textContent=t;
+      b.onclick=function(){applyFilter(t,b);};
+      row.appendChild(b);
+    });
+  }
+
+  window.applyFilter = function(f, btn) {
+    activeFilter=f;
+    document.querySelectorAll('.chip').forEach(function(c){c.classList.remove('active');});
+    btn.classList.add('active');
+    ALL.forEach(function(s,i){
+      var show=f==='all'||(s.tags||[]).indexOf(f)>-1;
+      if(MARKERS[i]) { if(show) map.addLayer(MARKERS[i]); else map.removeLayer(MARKERS[i]); }
+    });
+    document.querySelectorAll('.card').forEach(function(c,i){
+      c.style.display=(f==='all'||(ALL[i]&&(ALL[i].tags||[]).indexOf(f)>-1))?'':'none';
+    });
+    updateStats(ALL.filter(function(s){return f==='all'||(s.tags||[]).indexOf(f)>-1;}));
+  };
+
+  var RM={'⭐⭐⭐⭐⭐':5,'⭐⭐⭐⭐':4,'⭐⭐⭐':3,'⭐⭐':2,'⭐':1};
+  function updateStats(spots) {
+    document.getElementById('scount').textContent=spots.length;
+    var rated=spots.filter(function(s){return RM[s.rating];});
+    document.getElementById('srating').textContent=rated.length?(rated.reduce(function(a,s){return a+RM[s.rating];},0)/rated.length).toFixed(1):'—';
+  }
+
+  window.loadSpots = async function() {
+    var btn=document.getElementById('rbtn');
+    btn.innerHTML='<span class="spin">↻</span>'; btn.disabled=true;
+    try {
+      var r=await fetch('/api/spots');
+      if(!r.ok) throw new Error('API '+r.status);
+      var data=await r.json();
+      ALL=data.spots||[];
+      render(ALL);
+    } catch(e) {
+      document.getElementById('cards').innerHTML='<div class="empty"><div class="ei">⚠️</div><div class="et">Gagal load</div><div class="es">'+e.message+'</div></div>';
+      document.getElementById('psub').textContent='Error';
+    } finally {
+      btn.innerHTML='↻'; btn.disabled=false;
+    }
+  };
+
+  // INIT
+  loadSpots().then(function(){
+    setTimeout(function(){ document.getElementById('overlay').classList.add('gone'); }, 800);
+  });
+
+  map.on('click', function(){ map.closePopup(); });
+
+}); // end DOMContentLoaded
 </script>
 </body>
 </html>
